@@ -173,6 +173,15 @@
     margin: 5px 0;
 }
 
+.hint-message {
+    height: auto;
+    max-width: 420px;
+    margin: 8px auto 12px;
+    line-height: 1.5;
+    color: $ui-white-default;
+    opacity: 0.94;
+}
+
 .bar-outer {
     width: 250px;
     height: 8px;

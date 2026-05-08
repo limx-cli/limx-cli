@@ -24,6 +24,13 @@ const mainMessages = {
             description="Main creating message"
             id="gui.loader.creating"
         />
+    ),
+    'gui.loader.robotConnection': (
+        <FormattedMessage
+            defaultMessage="Please connect the robot"
+            description="Main message shown when robot connection appears unavailable during project creation"
+            id="gui.loader.robotConnection"
+        />
     )
 };
 
@@ -45,6 +52,8 @@ const messages = defineMessages({
     }
 });
 
+const ROBOT_CONNECTION_HINT_DELAY_MS = 8000;
+
 // Because progress events are fired so often during the very performance-critical loading
 // process and React updates are very slow, we bypass React for updating the progress bar.
 
@@ -60,6 +69,13 @@ class LoaderComponent extends React.Component {
         this.barInnerEl = null;
         this.messageEl = null;
         this.ignoreProgress = false;
+        this.latestAssetFinished = 0;
+        this.latestAssetTotal = 0;
+        this.robotConnectionHintShown = false;
+        this.robotConnectionHintTimer = null;
+        this.state = {
+            showRobotConnectionHint: false
+        };
     }
     componentDidMount () {
         this.handleAssetProgress(
@@ -68,13 +84,47 @@ class LoaderComponent extends React.Component {
         );
         this.props.vm.on('ASSET_PROGRESS', this.handleAssetProgress);
         this.props.vm.runtime.on('PROJECT_LOADED', this.handleProjectLoaded);
+        this.scheduleRobotConnectionHint();
+    }
+    componentDidUpdate (prevProps) {
+        if (prevProps.messageId !== this.props.messageId) {
+            this.scheduleRobotConnectionHint();
+        }
     }
     componentWillUnmount () {
         this.props.vm.off('ASSET_PROGRESS', this.handleAssetProgress);
         this.props.vm.runtime.off('PROJECT_LOADED', this.handleProjectLoaded);
+        this.clearRobotConnectionHint();
+    }
+    clearRobotConnectionHint () {
+        if (this.robotConnectionHintTimer) {
+            clearTimeout(this.robotConnectionHintTimer);
+            this.robotConnectionHintTimer = null;
+        }
+    }
+    scheduleRobotConnectionHint () {
+        this.clearRobotConnectionHint();
+        if (this.props.messageId !== 'gui.loader.creating') {
+            return;
+        }
+        this.robotConnectionHintTimer = setTimeout(() => {
+            if (this.latestAssetTotal > 0 && this.latestAssetFinished < this.latestAssetTotal) {
+                this.scheduleRobotConnectionHint();
+                return;
+            }
+            this.robotConnectionHintShown = true;
+            this.setState({
+                showRobotConnectionHint: true
+            });
+            if (this.barInnerEl) {
+                this.barInnerEl.style.width = '100%';
+            }
+        }, ROBOT_CONNECTION_HINT_DELAY_MS);
     }
     handleAssetProgress (finished, total) {
-        if (this.ignoreProgress || !this.barInnerEl || !this.messageEl) {
+        this.latestAssetFinished = finished;
+        this.latestAssetTotal = total;
+        if (this.ignoreProgress || this.robotConnectionHintShown || !this.barInnerEl || !this.messageEl) {
             return;
         }
 
@@ -98,6 +148,7 @@ class LoaderComponent extends React.Component {
 
         this.ignoreProgress = true;
         this.props.vm.runtime.resetProgress();
+        this.clearRobotConnectionHint();
     }
     barInnerRef (barInner) {
         this.barInnerEl = barInner;
@@ -106,6 +157,9 @@ class LoaderComponent extends React.Component {
         this.messageEl = message;
     }
     render () {
+        const titleMessageId = this.state.showRobotConnectionHint ?
+            'gui.loader.robotConnection' :
+            this.props.messageId;
         return (
             <div
                 className={classNames(styles.background, {
@@ -132,13 +186,22 @@ class LoaderComponent extends React.Component {
                     </div>
 
                     <div className={styles.title}>
-                        {mainMessages[this.props.messageId]}
+                        {mainMessages[titleMessageId]}
                     </div>
 
                     <div
-                        className={styles.message}
+                        className={classNames(styles.message, {
+                            [styles.hintMessage]: this.state.showRobotConnectionHint
+                        })}
                         ref={this.messageRef}
-                    />
+                    >
+                        {this.state.showRobotConnectionHint ? (
+                            <FormattedMessage
+                                defaultMessage="Robot connection was not detected. Please make sure the robot is powered on, connected to the network, then refresh the page and try again."
+                                id="tw.loader.robotConnectionHint"
+                            />
+                        ) : null}
+                    </div>
 
                     <div className={styles.barOuter}>
                         <div
