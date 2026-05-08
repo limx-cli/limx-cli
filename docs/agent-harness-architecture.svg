@@ -1,0 +1,170 @@
+<svg width="1440" height="940" viewBox="0 0 1440 940" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1440" y2="940" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07111F"/>
+      <stop offset="0.48" stop-color="#0B1730"/>
+      <stop offset="1" stop-color="#081B2A"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#62F7FF"/>
+      <stop offset="1" stop-color="#2D8CFF"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B990FF"/>
+      <stop offset="1" stop-color="#5B6CFF"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8CFFCF"/>
+      <stop offset="1" stop-color="#21C7A8"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE58A"/>
+      <stop offset="1" stop-color="#FF7AD9"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#62F7FF" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#2D8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.1 0 0 0 0 0.8 0 0 0 0 1 0 0 0 0.55 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <marker id="arrowCyan" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#64F4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#B990FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      text { font-family: "DejaVu Sans", "Noto Sans", "Liberation Sans", Arial, sans-serif; }
+      .title { font-size: 36px; font-weight: 700; fill: #F4FBFF; letter-spacing: 0.2px; }
+      .subtitle { font-size: 17px; font-weight: 400; fill: #A8C8D8; }
+      .eyebrow { font-size: 11px; font-weight: 700; fill: #07111F; letter-spacing: 1px; }
+      .layer { font-size: 18px; font-weight: 700; fill: #EAFBFF; }
+      .cardTitle { font-size: 19px; font-weight: 700; fill: #FFFFFF; }
+      .cardSub { font-size: 14px; font-weight: 400; fill: #B9D3E0; }
+      .tag { font-size: 13px; font-weight: 700; fill: #07111F; }
+      .small { font-size: 12px; font-weight: 400; fill: #9FC0D1; }
+      .note { font-size: 15px; font-weight: 400; fill: #DDF7FF; }
+      .line { stroke: #64F4FF; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrowCyan); }
+      .line2 { stroke: #B990FF; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrowPurple); }
+      .dash { stroke: #4EE8FF; stroke-width: 1.2; stroke-dasharray: 7 9; opacity: 0.4; }
+    </style>
+  </defs>
+  <rect width="1440" height="940" fill="url(#bg)"/>
+  <path d="M72 120C250 42 452 44 620 112C785 179 930 164 1100 89C1214 39 1304 48 1368 82" stroke="#62F7FF" stroke-width="2" opacity="0.22"/>
+  <path d="M88 842C260 776 438 785 600 840C760 894 944 896 1120 834C1222 798 1308 798 1364 824" stroke="#B990FF" stroke-width="2" opacity="0.18"/>
+  <g opacity="0.7">
+    <circle cx="1114" cy="114" r="68" stroke="#62F7FF" stroke-width="1.5" opacity="0.28"/>
+    <circle cx="1114" cy="114" r="104" stroke="#B990FF" stroke-width="1" opacity="0.18"/>
+    <ellipse cx="1114" cy="114" rx="144" ry="42" stroke="#8CFFCF" stroke-width="1.2" opacity="0.24" transform="rotate(-18 1114 114)"/>
+    <circle cx="1238" cy="74" r="14" fill="url(#orb)"/>
+  </g>
+  <g opacity="0.35">
+    <path d="M70 132H1370M70 252H1370M70 372H1370M70 492H1370M70 612H1370M70 732H1370M70 852H1370" stroke="#2B5670" stroke-width="1"/>
+    <path d="M160 70V880M320 70V880M480 70V880M640 70V880M800 70V880M960 70V880M1120 70V880M1280 70V880" stroke="#244E69" stroke-width="1"/>
+  </g>
+  <circle cx="1175" cy="170" r="140" fill="#2D8CFF" opacity="0.13" filter="url(#glow)"/>
+  <circle cx="250" cy="760" r="170" fill="#21C7A8" opacity="0.10" filter="url(#glow)"/>
+  <rect x="1010" y="54" width="300" height="28" rx="14" fill="url(#gold)" opacity="0.95"/>
+  <text x="1160" y="73" text-anchor="middle" class="eyebrow">ROBOT ACCESS LAYER</text>
+  <text x="72" y="84" class="title">LimX Agent Harness Software Architecture</text>
+  <text x="74" y="118" class="subtitle">A safe bridge for zero-code users, AI agents, developers, and real robots</text>
+  <g transform="translate(74 154)">
+    <rect x="0" y="0" width="1292" height="92" rx="26" fill="#0E213A" stroke="#28536A" stroke-width="1.4" opacity="0.96"/>
+    <rect x="22" y="24" width="116" height="34" rx="17" fill="url(#green)"/>
+    <text x="80" y="47" text-anchor="middle" class="tag">USER LAYER</text>
+    <text x="164" y="38" class="note">Block programming, CLI automation, and AI Agent control in one path</text>
+    <text x="164" y="64" class="small">User-facing skills: walk, action, dance, expression, volume, stop</text>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="88" y="305" width="250" height="142" rx="24" fill="#102743" stroke="#49ECFF" stroke-width="1.6"/>
+    <circle cx="132" cy="355" r="24" fill="url(#green)" opacity="0.95"/>
+    <path d="M122 355H142M132 345V365" stroke="#06121F" stroke-width="4" stroke-linecap="round"/>
+    <text x="168" y="348" class="cardTitle">Zero-code</text>
+    <text x="168" y="376" class="cardSub">Browser / Tablet</text>
+    <text x="116" y="416" class="small">Drag robot blocks</text>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="88" y="495" width="250" height="142" rx="24" fill="#102743" stroke="#8CFFCF" stroke-width="1.6"/>
+    <circle cx="132" cy="545" r="24" fill="url(#cyan)" opacity="0.95"/>
+    <path d="M120 550L128 558L146 532" stroke="#06121F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="168" y="538" class="cardTitle">Agent / Dev</text>
+    <text x="168" y="566" class="cardSub">CLI / Script</text>
+    <rect x="168" y="578" width="92" height="24" rx="12" fill="url(#purple)" opacity="0.92"/>
+    <text x="214" y="595" text-anchor="middle" class="tag">OpenClaw</text>
+    <text x="116" y="622" class="small">Call robot skills</text>
+  </g>
+  <g>
+    <rect x="410" y="270" width="520" height="420" rx="34" fill="#0B203B" stroke="#3ADFFF" stroke-width="2.2" opacity="0.98" filter="url(#softShadow)"/>
+    <text x="448" y="318" class="layer">agent-harness orchestration</text>
+    <text x="448" y="346" class="small">Turns WebSocket API calls into robot skill entries</text>
+    <rect x="452" y="380" width="198" height="96" rx="20" fill="#132D4B" stroke="#62F7FF" stroke-width="1.4"/>
+    <text x="480" y="417" class="cardTitle">limx-scratch</text>
+    <text x="480" y="444" class="cardSub">HTTP Bridge</text>
+    <text x="480" y="464" class="small">/run / extension.js</text>
+    <rect x="690" y="380" width="198" height="96" rx="20" fill="#132D4B" stroke="#B990FF" stroke-width="1.4"/>
+    <text x="718" y="417" class="cardTitle">Blocks</text>
+    <text x="718" y="444" class="cardSub">LimX Robot extension</text>
+    <text x="718" y="464" class="small">Dynamic menus</text>
+    <rect x="452" y="522" width="198" height="96" rx="20" fill="#132D4B" stroke="#8CFFCF" stroke-width="1.4"/>
+    <text x="480" y="559" class="cardTitle">limx-cli</text>
+    <text x="480" y="586" class="cardSub">Agent CLI</text>
+    <text x="480" y="606" class="small">walk / action / dance</text>
+    <rect x="690" y="522" width="198" height="96" rx="20" fill="#132D4B" stroke="#62F7FF" stroke-width="1.4"/>
+    <text x="704" y="559" class="cardTitle">WebSocketClient</text>
+    <text x="718" y="586" class="cardSub">WebSocket wrapper</text>
+    <text x="718" y="606" class="small">request_* / lock</text>
+    <path d="M650 428H690" class="line2"/>
+    <path d="M551 476V522" class="line"/>
+    <path d="M650 570H690" class="line"/>
+    <path d="M789 476V522" class="dash"/>
+    <rect x="578" y="488" width="106" height="24" rx="12" fill="#07182C" stroke="#315F7A" stroke-width="1" opacity="0.9"/>
+    <text x="631" y="505" text-anchor="middle" class="small">allowlist</text>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="1010" y="340" width="270" height="134" rx="24" fill="#112846" stroke="#62F7FF" stroke-width="1.6"/>
+    <text x="1050" y="388" class="cardTitle">WebSocket API</text>
+    <text x="1050" y="418" class="cardSub">Robot service</text>
+    <text x="1050" y="444" class="small">Receives request_* messages</text>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="1010" y="542" width="270" height="134" rx="24" fill="#112846" stroke="#8CFFCF" stroke-width="1.6"/>
+    <text x="1050" y="590" class="cardTitle">Robot Control</text>
+    <text x="1050" y="620" class="cardSub">Real robot</text>
+    <text x="1050" y="646" class="small">Walk, action, dance, stop</text>
+    <g transform="translate(1196 573)" opacity="0.9">
+      <circle cx="20" cy="18" r="13" stroke="#8CFFCF" stroke-width="2"/>
+      <path d="M20 31V55M5 43H35M9 72L20 55L31 72" stroke="#8CFFCF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <path d="M338 376C374 376 380 428 452 428" class="line"/>
+  <path d="M338 566C374 566 380 570 452 570" class="line"/>
+  <path d="M888 570C946 570 950 498 966 456C980 421 995 407 1010 407" class="line"/>
+  <rect x="1002" y="300" width="286" height="30" rx="15" fill="#07182C" stroke="#62F7FF" stroke-width="1.2" opacity="0.94"/>
+  <text x="1145" y="320" text-anchor="middle" class="small">Endpoint  ws://10.192.1.2:5000</text>
+  <path d="M1145 474V542" class="line"/>
+  <rect x="1160" y="496" width="132" height="26" rx="13" fill="#07182C" stroke="#315F7A" stroke-width="1" opacity="0.9"/>
+  <text x="1226" y="514" text-anchor="middle" class="small">control chain</text>
+  <g transform="translate(88 746)">
+    <rect x="0" y="0" width="1192" height="116" rx="28" fill="#0E213A" stroke="#28536A" stroke-width="1.4" opacity="0.96"/>
+    <text x="34" y="44" class="layer">Innovation Highlights</text>
+    <text x="34" y="76" class="small">AI CLI | Robot blocks | Safe allowlist | Control lock | WebSocket API | Robot stack</text>
+    <rect x="920" y="28" width="220" height="46" rx="23" fill="url(#cyan)" opacity="0.96"/>
+    <text x="1030" y="58" text-anchor="middle" class="tag">Robot Access for Everyone</text>
+    <text x="1030" y="96" text-anchor="middle" class="small" opacity="0.58">LimX Agent Harness</text>
+  </g>
+  <g opacity="0.85">
+    <circle cx="1324" cy="808" r="4" fill="#62F7FF"/>
+    <circle cx="1346" cy="808" r="4" fill="#B990FF"/>
+    <circle cx="1368" cy="808" r="4" fill="#8CFFCF"/>
+  </g>
+</svg>

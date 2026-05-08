@@ -1,0 +1,2 @@
+recursive-include limx_agent_harness *.js
+recursive-include limx_agent_harness/vendor *

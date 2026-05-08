@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "limx-agent-harness"
+version = "0.1.0"
+description = "Agent-native CLI harness for the LimX robot signaling WebSocket skills"
+requires-python = ">=3.8"
+dependencies = [
+  "websocket-client>=1.6",
+]
+
+[project.scripts]
+limx-cli = "limx_agent_harness.cli:main"
+limx-scratch = "limx_agent_harness.scratch_bridge:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+limx_agent_harness = ["*.js", "vendor/**/*"]

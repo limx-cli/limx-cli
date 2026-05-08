@@ -1,0 +1,22 @@
+{
+  "short_name": "LimX Robot",
+  "name": "LimX Robot Scratch",
+  "description": "Visual programming for LimX humanoid robots.",
+  "icons": [
+    {
+      "src": "images/192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "images/512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#333333",
+  "display": "standalone",
+  "theme_color": "#4c97ff",
+  "orientation": "any"
+}
