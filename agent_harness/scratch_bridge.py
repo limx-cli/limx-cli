@@ -168,12 +168,21 @@ SCRATCH_EXTENSION_JS = r"""
   const initialActionMenu = __LIMX_ACTION_MENU__;
   const initialDanceMenu = __LIMX_DANCE_MENU__;
   const robotName = __LIMX_ROBOT_NAME__;
+  const LIMX_BLOCK_PRIMARY = '#17C7FF';
+  const LIMX_BLOCK_SECONDARY = '#0F8FBD';
+  const LIMX_BLOCK_TERTIARY = '#075C86';
+  const LIMX_DANGER_PRIMARY = '#FF5A66';
+  const LIMX_DANGER_SECONDARY = '#D9364A';
+  const LIMX_DANGER_TERTIARY = '#981B2D';
 
   class LimXRobotExtension {
     getInfo() {
       return {
         id: 'limxRobot',
         name: robotName + ' Robot',
+        color1: LIMX_BLOCK_PRIMARY,
+        color2: LIMX_BLOCK_SECONDARY,
+        color3: LIMX_BLOCK_TERTIARY,
         blocks: [
           {
             opcode: 'state',
@@ -261,17 +270,17 @@ SCRATCH_EXTENSION_JS = r"""
             opcode: 'enterDampedMode',
             blockType: Scratch.BlockType.COMMAND,
             text: t('进入阻尼模式', 'enter damped mode'),
-            color1: '#FF4D4F',
-            color2: '#D9363E',
-            color3: '#A8071A'
+            color1: LIMX_DANGER_PRIMARY,
+            color2: LIMX_DANGER_SECONDARY,
+            color3: LIMX_DANGER_TERTIARY
           },
           {
             opcode: 'enterZeroTorqueMode',
             blockType: Scratch.BlockType.COMMAND,
             text: t('进入零力矩模式', 'enter zero torque mode'),
-            color1: '#FF4D4F',
-            color2: '#D9363E',
-            color3: '#A8071A'
+            color1: LIMX_DANGER_PRIMARY,
+            color2: LIMX_DANGER_SECONDARY,
+            color3: LIMX_DANGER_TERTIARY
           }
         ],
         menus: {

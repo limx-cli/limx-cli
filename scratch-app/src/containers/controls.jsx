@@ -5,6 +5,7 @@ import VM from 'scratch-vm';
 import {connect} from 'react-redux';
 
 import ControlsComponent from '../components/controls/controls.jsx';
+import {runCurrentProgram} from '../lib/limx-run-program';
 
 let lastRobotStopAt = 0;
 
@@ -47,6 +48,7 @@ class Controls extends React.Component {
     }
     handleGreenFlagClick (e) {
         e.preventDefault();
+        e.stopPropagation();
         // tw: implement alt+click and right click to toggle FPS
         if (e.shiftKey || e.altKey || e.type === 'contextmenu') {
             if (e.shiftKey) {
@@ -60,10 +62,7 @@ class Controls extends React.Component {
                 }
             }
         } else {
-            if (!this.props.isStarted) {
-                this.props.vm.start();
-            }
-            this.props.vm.greenFlag();
+            runCurrentProgram(this.props.vm);
         }
     }
     handleStopAllClick (e) {

@@ -292,6 +292,46 @@ let running = false;
 let watchInterval = null;
 let pendingCommands = 0;
 
+function isRunnableTopBlock(block) {
+  return block && block.topLevel && !block.parent && !block.shadow && block.opcode !== 'procedures_definition';
+}
+
+function blockPosition(block) {
+  return {
+    x: Number.isFinite(block.x) ? block.x : 0,
+    y: Number.isFinite(block.y) ? block.y : 0
+  };
+}
+
+function topLevelProgramBlocksForTarget(target) {
+  if (!target || !target.blocks || !target.blocks._blocks) return [];
+  return Object.entries(target.blocks._blocks)
+    .filter(([, block]) => isRunnableTopBlock(block))
+    .map(([id, block]) => ({id, target, ...blockPosition(block)}))
+    .sort((a, b) => (a.y - b.y) || (a.x - b.x));
+}
+
+function mainProgramBlock(vmInstance) {
+  const runtime = vmInstance && vmInstance.runtime;
+  if (!runtime || !Array.isArray(runtime.targets)) return null;
+
+  const editingTarget = runtime.getEditingTarget ? runtime.getEditingTarget() : vmInstance.editingTarget;
+  const orderedTargets = [];
+  if (editingTarget) orderedTargets.push(editingTarget);
+  for (const target of runtime.targets) {
+    if (target && target !== editingTarget && !target.isStage) orderedTargets.push(target);
+  }
+  for (const target of runtime.targets) {
+    if (target && target !== editingTarget && target.isStage) orderedTargets.push(target);
+  }
+
+  for (const target of orderedTargets) {
+    const blocks = topLevelProgramBlocksForTarget(target);
+    if (blocks.length > 0) return blocks[0];
+  }
+  return null;
+}
+
 function status() {
   if (!vm) return {state: 'idle'};
   const threads = vm.runtime.threads;
@@ -320,23 +360,13 @@ async function startProject() {
   vm.clear();
   await vm.loadProject(buffer);
   vm.start();
-  vm.greenFlag();
-
-  // Also start top-level blocks that don't have hat blocks (e.g. bare control_forever)
-  for (const target of vm.runtime.targets) {
-    if (!target.blocks) continue;
-    const allBlocks = target.blocks._blocks || {};
-    for (const [id, block] of Object.entries(allBlocks)) {
-      if (block.topLevel && !block.parent) {
-        const opcode = block.opcode || '';
-        const isHat = opcode.startsWith('event_') || opcode.startsWith('procedures_definition');
-        if (!isHat) {
-          process.stderr.write(`[runner] Starting orphan top-level block: ${opcode} (id=${id})\n`);
-          vm.runtime.toggleScript(id, {target: target, stackClick: true});
-        }
-      }
-    }
+  const program = mainProgramBlock(vm);
+  if (!program) {
+    process.stderr.write('[runner] No program blocks to run\n');
+    process.stdout.write(JSON.stringify({event: 'error', message: 'No program blocks to run'}) + '\n');
+    process.exit(1);
   }
+  vm.runtime._pushThread(program.id, program.target, {stackClick: true});
 
   process.stderr.write(`[runner] Threads: ${vm.runtime.threads.length}\n`);
   running = true;

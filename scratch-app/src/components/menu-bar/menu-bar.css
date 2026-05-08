@@ -116,33 +116,36 @@
 }
 
 .limx-menu-bar {
-    height: 56px;
-    padding: 0 20px;
+    height: 62px;
+    padding: 0 24px;
     background: var(--limx-menu-background);
     border-bottom: 1px solid var(--limx-menu-border);
     box-shadow: var(--limx-card-shadow);
     color: var(--text-primary);
+    backdrop-filter: blur(18px);
 }
 
 .limx-brand {
     display: flex;
     align-items: center;
-    gap: 14px;
-    letter-spacing: 0.04em;
+    gap: 16px;
+    letter-spacing: 0.035em;
 }
 
 .limx-brand-mark {
-    padding: 6px 10px;
-    border: 1px solid var(--limx-menu-border);
+    padding: 7px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: 999px;
     background: linear-gradient(135deg, var(--limx-brand-primary), var(--limx-brand-secondary));
-    color: #ffffff;
+    color: #06111F;
     font-weight: 800;
+    box-shadow: 0 0 26px rgba(87, 231, 255, 0.28);
 }
 
 .limx-brand-title {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 17px;
+    font-weight: 800;
+    text-shadow: 0 0 22px rgba(87, 231, 255, 0.22);
 }
 
 .limx-menu-actions {

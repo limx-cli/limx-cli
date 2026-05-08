@@ -1,5 +1,6 @@
 import io
 import json
+from pathlib import Path
 import unittest
 import zipfile
 from unittest import mock
@@ -215,6 +216,61 @@ class ScratchBridgeTest(unittest.TestCase):
 
         self.assertEqual("success", result["result"])
         self.assertEqual("/opt/limx/node/bin/node", popen.call_args.args[0][0])
+
+    def test_project_runner_starts_one_main_program_stack(self):
+        runner = Path(__file__).resolve().parents[1] / "agent_harness" / "scratch_runner.js"
+        source = runner.read_text(encoding="utf-8")
+
+        self.assertNotIn("vm.greenFlag();", source)
+        self.assertIn("mainProgramBlock", source)
+        self.assertIn("topLevelProgramBlocksForTarget", source)
+        self.assertIn("vm.runtime._pushThread(program.id", source)
+        self.assertNotIn("Starting orphan top-level block", source)
+
+    def test_editor_green_flag_runs_current_workspace_program(self):
+        root = Path(__file__).resolve().parents[1]
+        controls = (root / "scratch-app" / "src" / "containers" / "controls.jsx").read_text(encoding="utf-8")
+        overlay = (root / "scratch-app" / "src" / "containers" / "green-flag-overlay.jsx").read_text(
+            encoding="utf-8"
+        )
+        runner = (root / "scratch-app" / "src" / "lib" / "limx-run-program.js").read_text(encoding="utf-8")
+        bootstrap = (root / "scratch-app" / "static" / "static" / "bootstrap.js").read_text(encoding="utf-8")
+
+        self.assertNotIn("vm.greenFlag()", controls)
+        self.assertNotIn("vm.greenFlag()", overlay)
+        self.assertIn("runCurrentProgram(this.props.vm)", controls)
+        self.assertIn("runCurrentProgram(this.props.vm)", overlay)
+        self.assertIn("toggleScript(blockId", runner)
+        self.assertIn("mainProgramBlock", runner)
+        self.assertIn("MAIN_PROGRAM_RUN_INTERVAL_MS", runner)
+        self.assertIn("No program blocks to run", runner)
+        self.assertNotIn("startBrowserTopLevelScripts", bootstrap)
+        self.assertNotIn("_pushThread", bootstrap)
+        self.assertNotIn("isGreenFlagControl", bootstrap)
+
+    def test_editor_restores_background_running_state_on_reload(self):
+        root = Path(__file__).resolve().parents[1]
+        bootstrap = (root / "scratch-app" / "static" / "static" / "bootstrap.js").read_text(encoding="utf-8")
+
+        self.assertIn("function applyBgStatus(data, startPoll)", bootstrap)
+        self.assertIn("if (!bgStatusChecked) checkBgStatus();", bootstrap)
+        self.assertIn("showBgIndicator(true);", bootstrap)
+        self.assertIn("updateProjectButtons();", bootstrap)
+        self.assertIn("applyBgStatus(data, false);", bootstrap)
+        self.assertNotIn("__limxStopAllPatched", bootstrap)
+        self.assertNotIn("vm.stopAll = function", bootstrap)
+
+    def test_readonly_project_blocks_dragging_from_flyout(self):
+        root = Path(__file__).resolve().parents[1]
+        bootstrap = (root / "scratch-app" / "static" / "static" / "bootstrap.js").read_text(encoding="utf-8")
+
+        self.assertIn("function projectReadonlyActive()", bootstrap)
+        self.assertIn("node.closest('.blocklyFlyout')", bootstrap)
+        self.assertIn("function blockReadonlyDrag(e)", bootstrap)
+        self.assertIn("e.stopImmediatePropagation();", bootstrap)
+        self.assertIn("hookReadonlyDragBlocker();", bootstrap)
+        self.assertIn("workspace.classList.add('limx-project-readonly');", bootstrap)
+        self.assertIn("workspace.classList.remove('limx-project-readonly');", bootstrap)
 
     def test_parse_cli_json_keeps_non_json_stdout(self):
         self.assertEqual({"stdout": "hello"}, parse_cli_json("hello\n"))

@@ -252,6 +252,9 @@
       '  color: var(--text-primary, #333);',
       '  padding: 4px 6px;',
       '  cursor: pointer;',
+      '  white-space: nowrap;',
+      '  overflow: hidden;',
+      '  text-overflow: ellipsis;',
       '}',
       '.limx-project-actions button:hover, .limx-project-panel-header button:hover {',
       '  background: var(--ui-secondary, #f1f7ff);',
@@ -320,6 +323,10 @@
       '  background: var(--ui-modal-background, rgba(255,255,255,0.92));',
       '  border: 1px solid var(--ui-black-transparent, rgba(0,0,0,0.12));',
       '  box-shadow: 0 4px 14px rgba(0,0,0,0.12);',
+      '}',
+      '.limx-project-readonly .blocklyFlyout,',
+      '.limx-project-readonly .blocklyFlyout * {',
+      '  cursor: not-allowed !important;',
       '}'
     ].join('\n');
     document.head.appendChild(style);
@@ -545,7 +552,7 @@
   }
 
   function conflictMessage() {
-    return bgMsg('项目名称已存在，请重新取名。', 'Project name already exists. Please choose another name.');
+    return bgMsg('项目名称已存在，请重新取名。', 'Project name already exists.');
   }
 
   function getBlocksWorkspace() {
@@ -558,15 +565,48 @@
     updateProjectButtons();
   }
 
+  function projectReadonlyActive() {
+    return Boolean(currentProjectName && projectsCache.length && !projectEditEnabled);
+  }
+
+  function isReadonlyBlockedNode(node) {
+    if (!projectReadonlyActive() || !node || !node.closest) return false;
+    return Boolean(node.closest('.blocklyFlyout'));
+  }
+
+  function blockReadonlyDrag(e) {
+    if (!isReadonlyBlockedNode(e.target)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+
+  function hookReadonlyDragBlocker() {
+    if (document.__limxReadonlyDragBlockerHooked) return;
+    document.__limxReadonlyDragBlockerHooked = true;
+    [
+      'pointerdown',
+      'pointermove',
+      'mousedown',
+      'mousemove',
+      'touchstart',
+      'touchmove',
+      'dragstart'
+    ].forEach(function (eventName) {
+      document.addEventListener(eventName, blockReadonlyDrag, true);
+    });
+  }
+
   function updateReadonlyOverlay() {
     var workspace = getBlocksWorkspace();
     if (!workspace) return;
     var existing = document.getElementById('limx-readonly-overlay');
-    var shouldShow = Boolean(currentProjectName && projectsCache.length && !projectEditEnabled);
+    var shouldShow = projectReadonlyActive();
     if (!shouldShow) {
       if (existing) existing.remove();
+      workspace.classList.remove('limx-project-readonly');
       return;
     }
+    workspace.classList.add('limx-project-readonly');
     if (!existing) {
       existing = document.createElement('div');
       existing.id = 'limx-readonly-overlay';
@@ -576,7 +616,7 @@
     }
     var label = existing.querySelector('span');
     if (label) {
-      var readonlyText = bgMsg('点击“编辑”后修改项目', 'Click "Edit" to modify this project');
+      var readonlyText = bgMsg('点击“编辑”后修改项目', 'Click "Edit" to modify');
       if (label.textContent !== readonlyText) label.textContent = readonlyText;
     }
     var left = 14;
@@ -633,9 +673,9 @@
     var nextHtml = [
       '<div class="limx-empty-project-card">',
       '  <h3>' + bgMsg('还没有项目', 'No projects yet') + '</h3>',
-      '  <p>' + bgMsg('请先新建一个项目，或导入已有 .sb3 项目。', 'Create a project or import an existing .sb3 file.') + '</p>',
-      '  <button type="button" data-empty-action="create">' + bgMsg('新建项目', 'New Project') + '</button>',
-      '  <button type="button" data-empty-action="import">' + bgMsg('导入项目', 'Import Project') + '</button>',
+      '  <p>' + bgMsg('请先新建一个项目，或导入已有 .sb3 项目。', 'Create a project or import .sb3') + '</p>',
+      '  <button type="button" data-empty-action="create">' + bgMsg('新建项目', 'New') + '</button>',
+      '  <button type="button" data-empty-action="import">' + bgMsg('导入项目', 'Import') + '</button>',
       '</div>'
     ].join('');
     if (promptEl.innerHTML !== nextHtml) promptEl.innerHTML = nextHtml;
@@ -668,7 +708,7 @@
   function saveCurrentProject() {
     var vm = getVM();
     if (!vm || !currentProjectName || bgSyncing || !projectDirty || saveInFlight) return;
-    if (!confirm(bgMsg('确认保存当前修改到后台项目文件？', 'Save current changes to the background project file?'))) {
+    if (!confirm(bgMsg('确认保存当前修改到后台项目文件？', 'Save project changes?'))) {
       return;
     }
     saveInFlight = true;
@@ -677,7 +717,7 @@
       return postBlob('/project/save?name=' + encodeURIComponent(currentProjectName), blob);
     }).then(function (data) {
       if (data.result !== 'success') {
-        alert(data.message || bgMsg('保存失败，请确认后台服务已更新并运行。', 'Save failed. Please confirm the bridge service is updated and running.'));
+        alert(data.message || bgMsg('保存失败，请确认后台服务已更新并运行。', 'Save failed. Check the local service.'));
       } else {
         projectDirty = false;
         projectEditEnabled = false;
@@ -705,7 +745,7 @@
     if (!panel) return;
     setButtonText(panel, '[data-project-action="create"]', '新建', 'New');
     setButtonText(panel, '[data-project-action="import"]', '导入', 'Import');
-    setButtonText(panel, '[data-project-action="run"]', '后台运行', 'Run in Background');
+    setButtonText(panel, '[data-project-action="run"]', '后台运行', 'Run BG');
     setButtonText(panel, '[data-project-action="persist"]', '保存', 'Save');
     setButtonText(panel, '[data-project-action="download"]', '下载', 'Download');
     setButtonText(panel, '[data-project-action="edit"]', '编辑', 'Edit');
@@ -769,7 +809,7 @@
         if (item) {
           if (!item.hasAttribute('data-name')) return;
           if (hasUnsavedCurrentProject()) {
-            alert(bgMsg('当前项目有未保存修改，请先保存。', 'Please save current changes first.'));
+            alert(bgMsg('当前项目有未保存修改，请先保存。', 'Save current changes first.'));
             return;
           }
           selectedProject = item.getAttribute('data-name') || '';
@@ -802,7 +842,7 @@
     var title = document.getElementById('limx-project-title');
     if (!title) return;
     var text = bgMsg('项目库', 'Projects');
-    if (hasUnsavedCurrentProject()) text += bgMsg('（未保存）', ' (Unsaved)');
+    if (hasUnsavedCurrentProject()) text += bgMsg('（未保存）', ' *');
     if (title.textContent !== text) title.textContent = text;
   }
 
@@ -880,7 +920,7 @@
 
   function requireSelectedProject() {
     if (selectedProject) return selectedProject;
-    alert(bgMsg('请先选择一个项目', 'Select a project first'));
+    alert(bgMsg('请先选择一个项目', 'Select a project'));
     return '';
   }
 
@@ -891,7 +931,7 @@
   }
 
   function createEmptyProject() {
-    var name = prompt(bgMsg('请输入新项目名称', 'Enter new project name'));
+    var name = prompt(bgMsg('请输入新项目名称', 'New project name'));
     name = normalizeProjectName(name);
     if (!name) return;
     postJson('/project/create_empty', {name: name}).then(function (data) {
@@ -910,7 +950,7 @@
   function importProjectFile(file) {
     if (!file) return;
     var defaultName = file.name || 'project.sb3';
-    var name = prompt(bgMsg('请输入导入后的项目名称', 'Project name after import'), defaultName);
+    var name = prompt(bgMsg('请输入导入后的项目名称', 'Import as'), defaultName);
     name = normalizeProjectName(name);
     if (!name) return;
     fetch('/project/upload?name=' + encodeURIComponent(name), {
@@ -933,7 +973,7 @@
   function handleProjectAction(action) {
     if (action === 'create') {
       if (hasUnsavedCurrentProject()) {
-        alert(bgMsg('当前项目有未保存修改，请先保存。', 'Please save current changes first.'));
+        alert(bgMsg('当前项目有未保存修改，请先保存。', 'Save current changes first.'));
         return;
       }
       createEmptyProject();
@@ -941,7 +981,7 @@
     }
     if (action === 'import') {
       if (hasUnsavedCurrentProject()) {
-        alert(bgMsg('当前项目有未保存修改，请先保存。', 'Please save current changes first.'));
+        alert(bgMsg('当前项目有未保存修改，请先保存。', 'Save current changes first.'));
         return;
       }
       var input = document.getElementById('limx-project-import-input');
@@ -951,7 +991,7 @@
     var name = action === 'persist' ? currentProjectName : requireSelectedProject();
     if (!name) return;
     if (action !== 'persist' && hasUnsavedCurrentProject()) {
-      alert(bgMsg('当前项目有未保存修改，请先保存。', 'Please save current changes first.'));
+      alert(bgMsg('当前项目有未保存修改，请先保存。', 'Save current changes first.'));
       return;
     }
     if (action === 'run') {
@@ -977,7 +1017,7 @@
     } else if (action === 'edit') {
       loadBgProject(name, true);
     } else if (action === 'rename') {
-      var next = prompt(bgMsg('输入新的项目名称', 'New project name'), name);
+      var next = prompt(bgMsg('输入新的项目名称', 'Rename to'), name);
       if (!next || next === name) return;
       postJson('/project/rename', {old_name: name, new_name: next}).then(function (data) {
         if (data.result === 'success') {
@@ -990,7 +1030,7 @@
       });
     } else if (action === 'delete') {
       if (isProjectRunning(name)) {
-        alert(bgMsg('正在运行的项目不能删除。', 'A running project cannot be deleted.'));
+        alert(bgMsg('正在运行的项目不能删除。', 'Cannot delete a running project.'));
         updateProjectButtons();
         return;
       }
@@ -1050,21 +1090,28 @@
 
   window.__LIMX_REQUEST_ROBOT_STOP__ = bgStop;
 
+  function applyBgStatus(data, startPoll) {
+    if (data && data.state === 'running' && data.project) {
+      selectedProject = data.project;
+      runningProjectName = data.project;
+      window.__LIMX_BG_ACTIVE__ = true;
+      showBgIndicator(true);
+      if (startPoll) startBgStatusPoll();
+    } else {
+      window.__LIMX_BG_ACTIVE__ = false;
+      runningProjectName = '';
+      showBgIndicator(false);
+      stopBgStatusPoll();
+    }
+    renderProjectList();
+    updateProjectButtons();
+  }
+
   function startBgStatusPoll() {
     stopBgStatusPoll();
     bgStatusPoller = setInterval(function () {
       fetch('/project/status').then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.state !== 'running') {
-            window.__LIMX_BG_ACTIVE__ = false;
-            runningProjectName = '';
-            showBgIndicator(false);
-            stopBgStatusPoll();
-          } else {
-            runningProjectName = data.project || '';
-          }
-          renderProjectList();
-        }).catch(function () {});
+        .then(function (data) { applyBgStatus(data, false); }).catch(function () {});
     }, 3000);
   }
 
@@ -1162,48 +1209,6 @@
     }, 200);
   }
 
-  function startBrowserTopLevelScripts(vm) {
-    if (!vm || !vm.runtime || !Array.isArray(vm.runtime.targets)) return 0;
-    var started = 0;
-    for (var i = 0; i < vm.runtime.targets.length; i++) {
-      var target = vm.runtime.targets[i];
-      if (!target || !target.blocks) continue;
-      var allBlocks = target.blocks._blocks || {};
-      Object.keys(allBlocks).forEach(function (id) {
-        var block = allBlocks[id];
-        if (!block || !block.topLevel || block.parent) return;
-        var opcode = block.opcode || '';
-        var isHat = opcode.indexOf('event_') === 0 || opcode.indexOf('procedures_definition') === 0;
-        if (isHat) return;
-        try {
-          vm.runtime._pushThread(id, target, {stackClick: true});
-          started++;
-          console.log('[bootstrap] pushed thread for top-level script:', opcode, id);
-        } catch (err) {
-          console.warn('[bootstrap] failed to push thread:', err);
-        }
-      });
-    }
-    return started;
-  }
-
-  function isGreenFlagControl(node) {
-    if (!node || !node.closest) return false;
-    var el = node.closest('img, button, [role="button"]');
-    if (!el) return false;
-    var text = [
-      el.getAttribute('class') || '',
-      el.getAttribute('src') || '',
-      el.getAttribute('title') || '',
-      el.getAttribute('aria-label') || ''
-    ].join(' ').toLowerCase();
-    return text.indexOf('green-flag') !== -1 ||
-      text.indexOf('greenflag') !== -1 ||
-      text.indexOf('icon--green-flag') !== -1 ||
-      text === 'go' ||
-      text.indexOf(' go') !== -1;
-  }
-
   function isStopAllControl(node) {
     if (!node || !node.closest) return false;
     var el = node.closest('img, button, [role="button"]');
@@ -1230,15 +1235,6 @@
       document.addEventListener(eventName, function (event) {
         if (isStopAllControl(event.target)) {
           bgStop();
-          return;
-        }
-        if (!isGreenFlagControl(event.target)) return;
-        var vm = getVM();
-        if (vm) {
-          window.setTimeout(function () {
-            var count = startBrowserTopLevelScripts(vm);
-            if (count > 0) setBrowserProjectRunning(true);
-          }, 50);
         }
       }, true);
     });
@@ -1251,14 +1247,6 @@
     bgRunnerHooked = true;
     console.log('[bootstrap] VM hooked; browser green flag runs locally');
     vm.on('PROJECT_CHANGED', markProjectDirty);
-    if (!vm.__limxStopAllPatched && typeof vm.stopAll === 'function') {
-      var origStopAll = vm.stopAll.bind(vm);
-      vm.stopAll = function () {
-        bgStop();
-        return origStopAll.apply(vm, arguments);
-      };
-      vm.__limxStopAllPatched = true;
-    }
     if (!vm.__limxGreenFlagPatched && typeof vm.greenFlag === 'function') {
       var origGF = vm.greenFlag.bind(vm);
       vm.greenFlag = function () {
@@ -1267,10 +1255,7 @@
           return;
         }
         lastBrowserGreenFlagRunAt = now;
-        origGF.apply(vm, arguments);
-        var count = startBrowserTopLevelScripts(vm);
-        console.log('[bootstrap] greenFlag patched: started', count, 'orphan scripts');
-        if (count > 0) setBrowserProjectRunning(true);
+        return origGF.apply(vm, arguments);
       };
       vm.__limxGreenFlagPatched = true;
     }
@@ -1279,50 +1264,44 @@
     });
     vm.on('PROJECT_STOP_ALL', function () {
       setBrowserProjectRunning(false);
-      bgStop();
     });
     vm.on('PROJECT_RUN_STOP', function () {
       setBrowserProjectRunning(false);
-      bgStop();
     });
     vm.on('RUNTIME_STOPPED', function () {
       setBrowserProjectRunning(false);
-      bgStop();
     });
     if (vm.runtime && typeof vm.runtime.on === 'function') {
       vm.runtime.on('RUNTIME_PAUSED', function () {
         setBrowserProjectRunning(false);
-        bgStop();
       });
     }
     vm.on('RUNTIME_PAUSED', function () {
       setBrowserProjectRunning(false);
-      bgStop();
     });
     checkBgStatus();
   }
 
   function checkBgStatus() {
+    if (document.__limxBgStatusChecking) return;
+    document.__limxBgStatusChecking = true;
     fetch('/project/status').then(function (r) { return r.json(); })
       .then(function (data) {
+        document.__limxBgStatusChecking = false;
         console.log('[bootstrap] checkBgStatus:', JSON.stringify(data));
         if (data.state === 'running' && data.project) {
-          selectedProject = data.project;
-          runningProjectName = data.project;
           initialProjectLoaded = true;
           bgStatusChecked = true;
+          applyBgStatus(data, true);
           refreshProjectList();
-          window.__LIMX_BG_ACTIVE__ = true;
-          showBgIndicator(true);
-          startBgStatusPoll();
           loadBgProject(data.project, false);
         } else {
-          window.__LIMX_BG_ACTIVE__ = false;
-          runningProjectName = '';
           bgStatusChecked = true;
+          applyBgStatus(data, false);
           refreshProjectList();
         }
       }).catch(function () {
+        document.__limxBgStatusChecking = false;
         bgStatusChecked = true;
         refreshProjectList();
       });
@@ -1394,11 +1373,13 @@
     fixSettingsMenuPosition();
     enforceBranding();
     hookControlDomClicks();
+    hookReadonlyDragBlocker();
     hookVM();
     ensureProjectPanel();
     chooseDefaultBlocksCategory();
     updateLocalizedUi();
     updateReadonlyOverlay();
+    if (!bgStatusChecked) checkBgStatus();
   }
 
   var tickScheduled = false;

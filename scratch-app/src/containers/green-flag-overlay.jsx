@@ -6,6 +6,7 @@ import {connect} from 'react-redux';
 import VM from 'scratch-vm';
 import Box from '../components/box/box.jsx';
 import greenFlag from '../components/green-flag/icon--green-flag.svg';
+import {runCurrentProgram} from '../lib/limx-run-program';
 import {setStartedState} from '../reducers/vm-status.js';
 
 class GreenFlagOverlay extends React.Component {
@@ -16,14 +17,17 @@ class GreenFlagOverlay extends React.Component {
         ]);
     }
 
-    handleClick () {
-        this.props.vm.start();
-        this.props.vm.greenFlag();
+    handleClick (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const started = runCurrentProgram(this.props.vm);
 
         // FIXME: some unknown edge cases are causing start() to be called but for the
         // RUNTIME_STARTED listener to not update redux, causing this to always be
         // shown and never go away. this is a temporary hack to avoid that...
-        this.props.onStarted();
+        if (started) {
+            this.props.onStarted();
+        }
     }
 
     render () {

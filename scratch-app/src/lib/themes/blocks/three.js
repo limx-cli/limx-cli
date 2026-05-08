@@ -1,15 +1,15 @@
 const blockColors = {
     motion: {
-        primary: '#4C97FF',
-        secondary: '#4280D7',
-        tertiary: '#3373CC',
-        quaternary: '#3373CC'
+        primary: '#1FB8FF',
+        secondary: '#1398D9',
+        tertiary: '#0B6EA8',
+        quaternary: '#0B6EA8'
     },
     looks: {
-        primary: '#9966FF',
-        secondary: '#855CD6',
-        tertiary: '#774DCB',
-        quaternary: '#774DCB'
+        primary: '#8B7CFF',
+        secondary: '#6E61D9',
+        tertiary: '#5148A8',
+        quaternary: '#5148A8'
     },
     sounds: {
         primary: '#CF63CF',
@@ -18,10 +18,10 @@ const blockColors = {
         quaternary: '#BD42BD'
     },
     control: {
-        primary: '#FFAB19',
-        secondary: '#EC9C13',
-        tertiary: '#CF8B17',
-        quaternary: '#CF8B17'
+        primary: '#FFB84D',
+        secondary: '#E69A21',
+        tertiary: '#B87515',
+        quaternary: '#B87515'
     },
     event: {
         primary: '#FFBF00',
@@ -30,16 +30,16 @@ const blockColors = {
         quaternary: '#CC9900'
     },
     sensing: {
-        primary: '#5CB1D6',
-        secondary: '#47A8D1',
-        tertiary: '#2E8EB8',
-        quaternary: '#2E8EB8'
+        primary: '#57E7FF',
+        secondary: '#28BBD6',
+        tertiary: '#1590A8',
+        quaternary: '#1590A8'
     },
     pen: {
-        primary: '#0fBD8C',
-        secondary: '#0DA57A',
-        tertiary: '#0B8E69',
-        quaternary: '#0B8E69'
+        primary: '#4EECC6',
+        secondary: '#25C7A0',
+        tertiary: '#12997A',
+        quaternary: '#12997A'
     },
     operators: {
         primary: '#59C059',
@@ -48,10 +48,10 @@ const blockColors = {
         quaternary: '#389438'
     },
     data: {
-        primary: '#FF8C1A',
-        secondary: '#FF8000',
-        tertiary: '#DB6E00',
-        quaternary: '#DB6E00'
+        primary: '#FF8F6A',
+        secondary: '#E66F49',
+        tertiary: '#B94D2F',
+        quaternary: '#B94D2F'
     },
     // This is not a new category, but rather for differentiation
     // between lists and scalar variables.
@@ -74,15 +74,15 @@ const blockColors = {
         quaternary: '#3aa8a4'
     },
     text: '#FFFFFF',
-    workspace: '#F9F9F9',
-    toolboxHover: '#4C97FF',
-    toolboxSelected: '#E9EEF2',
-    toolboxText: '#575E75',
+    workspace: '#F5F9FC',
+    toolboxHover: '#17C7FF',
+    toolboxSelected: '#E7F6FF',
+    toolboxText: '#16324A',
     toolbox: '#FFFFFF',
     blackText: '#575E75',
-    flyout: '#F9F9F9',
-    scrollbar: '#CECDCE',
-    scrollbarHover: '#CECDCE',
+    flyout: '#F5F9FC',
+    scrollbar: '#57E7FF',
+    scrollbarHover: '#17C7FF',
     textField: '#FFFFFF',
     textFieldText: '#575E75',
     insertionMarker: '#000000',

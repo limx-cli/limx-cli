@@ -10,12 +10,41 @@
 
 .body-wrapper {
     flex-grow: 1;
+    position: relative;
+    overflow: hidden;
     background:
         linear-gradient(var(--limx-grid-line) 1px, transparent 1px),
         linear-gradient(90deg, var(--limx-grid-line) 1px, transparent 1px),
         var(--limx-app-background);
     background-size: 32px 32px, 32px 32px, auto;
-    padding: 14px;
+    padding: 18px;
+}
+
+.body-wrapper:before,
+.body-wrapper:after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.body-wrapper:before {
+    inset: 0;
+    background:
+        radial-gradient(680px 220px at 78% 0%, rgba(87, 231, 255, 0.14), transparent 60%),
+        radial-gradient(420px 260px at 8% 100%, rgba(78, 236, 198, 0.10), transparent 64%);
+}
+
+.body-wrapper:after {
+    width: 520px;
+    height: 520px;
+    right: -180px;
+    top: -210px;
+    border: 1px solid rgba(87, 231, 255, 0.12);
+    border-radius: 50%;
+    box-shadow:
+        -120px 210px 0 -118px rgba(87, 231, 255, 0.18),
+        -260px 420px 0 -258px rgba(255, 143, 106, 0.16);
 }
 
 .body-wrapper * {
@@ -39,7 +68,9 @@
         TW: and also fix double horizontal scrollbar at some screen sizes in paint editor
     */
     overflow: hidden;
-    gap: 14px;
+    gap: 18px;
+    position: relative;
+    z-index: 1;
 }
 
 .editor-wrapper {
@@ -62,10 +93,11 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--limx-card-border);
-    border-radius: 18px;
+    border-radius: 22px;
     overflow: hidden;
     background: var(--limx-card-background);
     box-shadow: var(--limx-card-shadow);
+    backdrop-filter: blur(16px);
 }
 
 .tab-list {
@@ -228,9 +260,10 @@
     flex: 0 0 334px;
     width: 334px;
     border: 1px solid var(--limx-card-border);
-    border-radius: 18px;
+    border-radius: 22px;
     background: var(--limx-card-background);
     box-shadow: var(--limx-card-shadow);
+    backdrop-filter: blur(16px);
 }
 
 .target-wrapper {

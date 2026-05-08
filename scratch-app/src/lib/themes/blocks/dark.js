@@ -2,16 +2,16 @@ import {hex2hsv, hsv2hex} from '../../tw-color-utils';
 
 const blockColors = {
     motion: {
-        primary: '#0F1E33',
-        secondary: '#4C4C4C',
-        tertiary: '#4C97FF',
-        quaternary: '#4C97FF'
+        primary: '#0C2C47',
+        secondary: '#143A5A',
+        tertiary: '#1FB8FF',
+        quaternary: '#57E7FF'
     },
     looks: {
-        primary: '#1E1433',
-        secondary: '#4C4C4C',
-        tertiary: '#9966FF',
-        quaternary: '#9966FF'
+        primary: '#1D1A4C',
+        secondary: '#29246A',
+        tertiary: '#8B7CFF',
+        quaternary: '#B7AEFF'
     },
     sounds: {
         primary: '#291329',
@@ -20,10 +20,10 @@ const blockColors = {
         quaternary: '#CF63CF'
     },
     control: {
-        primary: '#332205',
-        secondary: '#4C4C4C',
-        tertiary: '#FFAB19',
-        quaternary: '#FFAB19'
+        primary: '#3B2608',
+        secondary: '#5A390C',
+        tertiary: '#FFB84D',
+        quaternary: '#FFD27A'
     },
     event: {
         primary: '#332600',
@@ -32,16 +32,16 @@ const blockColors = {
         quaternary: '#FFBF00'
     },
     sensing: {
-        primary: '#12232A',
-        secondary: '#4C4C4C',
-        tertiary: '#5CB1D6',
-        quaternary: '#5CB1D6'
+        primary: '#0C3038',
+        secondary: '#124654',
+        tertiary: '#57E7FF',
+        quaternary: '#9AF4FF'
     },
     pen: {
-        primary: '#03251C',
-        secondary: '#4C4C4C',
-        tertiary: '#0fBD8C',
-        quaternary: '#0fBD8C'
+        primary: '#06352B',
+        secondary: '#0A5141',
+        tertiary: '#4EECC6',
+        quaternary: '#8AF5DE'
     },
     operators: {
         primary: '#112611',
@@ -50,10 +50,10 @@ const blockColors = {
         quaternary: '#59C059'
     },
     data: {
-        primary: '#331C05',
-        secondary: '#4C4C4C',
-        tertiary: '#FF8C1A',
-        quaternary: '#FF8C1A'
+        primary: '#3B1F13',
+        secondary: '#5A2E1D',
+        tertiary: '#FF8F6A',
+        quaternary: '#FFB299'
     },
     data_lists: {
         primary: '#331405',
@@ -73,10 +73,10 @@ const blockColors = {
         tertiary: '#34e4d0',
         quaternary: '#34e4d0'
     },
-    text: 'rgba(255, 255, 255, .7)',
+    text: 'rgba(235, 250, 255, .86)',
     textFieldText: '#E5E5E5',
-    textField: '#4C4C4C',
-    menuHover: 'rgba(255, 255, 255, 0.3)'
+    textField: '#102D4A',
+    menuHover: 'rgba(87, 231, 255, 0.24)'
 };
 
 const extensions = {};
@@ -87,7 +87,7 @@ const customExtensionColors = {
         hsv[2] = Math.max(hsv[2] - 70, 20);
         return hsv2hex(hsv);
     },
-    secondary: () => '#4C4C4C',
+    secondary: () => '#143A5A',
     tertiary: primary => primary,
     quaternary: primary => primary,
     categoryIconBackground: primary => customExtensionColors.primary(primary),

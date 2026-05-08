@@ -362,11 +362,17 @@ const TWStateManager = function (WrappedComponent) {
             }
 
             const extensions = urlParams.getAll('extension');
+            const defaultExtension = `${window.location.origin}/extension.js`;
             if (extensions.length === 0) {
-                const origin = window.location.origin;
-                extensions.push(origin + '/extension.js');
+                extensions.push(defaultExtension);
             }
             for (const extension of extensions) {
+                if (
+                    extension === defaultExtension &&
+                    this.props.vm.extensionManager.isExtensionLoaded('limxRobot')
+                ) {
+                    continue;
+                }
                 this.props.vm.extensionManager.loadExtensionURL(extension);
             }
 
