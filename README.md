@@ -1,50 +1,50 @@
 # LimX Agent Harness
 
-中文 | [English](README_en.md)
+English | [中文](README_cn.md)
 
-LimX Agent Harness 是运行在 LimX 机器人 WebSocket API 之上的技能控制与编排层。它把机器人复杂的 `request_*` 控制接口封装成两类更容易使用的入口：
+LimX Agent Harness is a skill control and orchestration layer built on top of the LimX robot WebSocket API. It wraps the robot's `request_*` control interfaces into two easier-to-use entry points:
 
-- `limx-cli`：面向 AI Agent、自动化脚本和开发者的命令行工具。
-- `limx-scratch`：面向 Scratch 图形化编程的本地服务，内置 `LimX Robot` 积木扩展。
+- `limx-cli`: a command-line tool for AI Agents, automation scripts, and developers.
+- `limx-scratch`: a local service for Scratch visual programming, with the built-in `LimX Robot` block extension.
 
-![LimX Agent Harness 软件架构](docs/agent-harness-architecture.svg)
+![LimX Agent Harness Software Architecture](docs/agent-harness-architecture.svg)
 
-## 1. 特性
+## 1. Features
 
-- **低门槛使用**：普通用户可以用积木编排机器人行为，开发者和 Agent 可以用 CLI 调用同一套能力。
-- **支持 Oli 机器人**：支持状态查询、运动控制、动作、舞蹈、表情和音量等常用技能，其它机器人敬请期待。
-- **适合自动化**：CLI 支持 JSON 输出和 dry-run，便于脚本、AI Agent 和测试流程集成。
-- **易于部署**：通过 CMake 生成可安装 bundle，安装后可直接使用 `limx-cli` 和 `limx-scratch`。
+- **Easy to use**: users can build robot behaviors with blocks, while developers and Agents can call the same capabilities through the CLI.
+- **Supports Oli robot**: supports common skills such as state queries, motion control, actions, dances, emojis, and volume control. Support for other robots is coming soon.
+- **Automation friendly**: the CLI outputs JSON by default and supports dry-run, making it suitable for scripts, AI Agents, and test flows.
+- **Easy to deploy**: CMake builds an installable bundle, with `limx-cli` and `limx-scratch` available directly after installation.
 
-## 2. 架构概览
+## 2. Architecture Overview
 
-典型链路如下：
+Typical flow:
 
-1. 用户通过 Scratch 积木、CLI、脚本或 AI Agent 发出机器人技能命令。
-2. `limx-scratch` 将图形化积木请求转换成受限的 CLI 调用。
-3. `limx-cli` 将高层技能命令转换为 WebSocket API `request_*` 消息。
-4. WebSocket API 把请求交给机器人控制系统。
+1. A user sends a robot skill command through Scratch blocks, CLI, scripts, or an AI Agent.
+2. `limx-scratch` converts visual block requests into limited CLI calls.
+3. `limx-cli` converts high-level skill commands into WebSocket API `request_*` messages.
+4. The WebSocket API forwards the requests to the robot control system.
 
-## 3. 前置条件
+## 3. Prerequisites
 
-- Linux x86_64 或 aarch64。
-- Python `>= 3.8`。
-- CMake `>= 3.16`。
-- 可访问 LimX 机器人 WebSocket API，默认地址为 `ws://10.192.1.2:5000`。
-- 构建 Scratch 静态站点时，构建机需要 Node.js / npm。
-- CMake 部署包会内置指定版本的 Node.js runtime，目标机器运行 `limx-scratch` 时不需要额外安装系统 Node.js。
+- Linux x86_64 or aarch64.
+- Python `>= 3.8`.
+- CMake `>= 3.16`.
+- Access to the LimX robot WebSocket API. The default address is `ws://10.192.1.2:5000`.
+- Building the Scratch static site requires Node.js / npm on the build machine.
+- The CMake deployment bundle includes the specified Node.js runtime, so the target machine does not need a system Node.js installation to run `limx-scratch`.
 
-Ubuntu / Debian 可使用：
+On Ubuntu / Debian:
 
 ```bash
 sudo apt update
 sudo apt install -y build-essential cmake python3 python3-pip curl
 ```
 
-使用 nvm 安装 Node.js `22.22.0`：
+Install Node.js `22.22.0` with nvm:
 
 ```bash
-# nvm 示例
+# nvm example
 curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 . "$HOME/.nvm/nvm.sh"
 nvm install 22.22.0
@@ -53,21 +53,21 @@ node --version
 npm --version
 ```
 
-Python 依赖：
+Python dependency:
 
 ```bash
 python3 -m pip install websocket-client
 ```
 
-开发测试可额外安装：
+For development tests:
 
 ```bash
 python3 -m pip install pytest
 ```
 
-## 4. CMake 编译和安装
+## 4. Build And Install With CMake
 
-通过 CMake 编译安装：
+Build with CMake:
 
 ```bash
 cd agent-harness
@@ -75,19 +75,19 @@ cmake -S . -B build
 cmake --build build
 ```
 
-本地测试安装：
+Install for local testing:
 
 ```bash
 cmake --install build --prefix install
 ```
 
-安装后：
+After installation:
 
-- `limx-cli` 位于 `install/bin/limx-cli`。
-- `limx-scratch` 位于 `install/bin/limx-scratch`。
-- 其它运行时资源位于 `install/bin/agent-harness/`。
+- `limx-cli` is installed to `install/bin/limx-cli`.
+- `limx-scratch` is installed to `install/bin/limx-scratch`.
+- Other runtime resources are installed to `install/bin/agent-harness/`.
 
-使用本地安装目录：
+Use the local installation directory:
 
 ```bash
 export PATH="$PWD/install/bin:$PATH"
@@ -96,29 +96,29 @@ limx-cli --help
 limx-scratch --help
 ```
 
-系统安装使用 `/usr/local`：
+Install system-wide to `/usr/local`:
 
 ```bash
 sudo cmake --install build --prefix /usr/local
 ```
 
-系统安装后：
+After system installation:
 
-- `limx-cli` 位于 `/usr/local/bin/limx-cli`。
-- `limx-scratch` 位于 `/usr/local/bin/limx-scratch`。
-- 其它运行时资源位于 `/usr/local/bin/agent-harness/`。
+- `limx-cli` is installed to `/usr/local/bin/limx-cli`.
+- `limx-scratch` is installed to `/usr/local/bin/limx-scratch`.
+- Other runtime resources are installed to `/usr/local/bin/agent-harness/`.
 
-## 5. 快速使用
+## 5. Quick Start
 
-### 5.1 配置机器人连接
+### 5.1 Configure Robot Connection
 
-默认连接 `10.192.1.2:5000`。可以用命令行参数覆盖：
+The default connection is `10.192.1.2:5000`. It can be overridden with command-line arguments:
 
 ```bash
 limx-cli --host 10.192.1.2 --port 5000 state mode
 ```
 
-也可以用环境变量设置默认值：
+Environment variables can also be used:
 
 ```bash
 export LIMX_ROBOT_HOST=10.192.1.2
@@ -127,32 +127,32 @@ export LIMX_ROBOT_PORT=5000
 
 ### 5.2 CLI
 
-常用命令：
+Common commands:
 
 ```bash
-# 状态查询
+# State queries
 limx-cli state mode
 limx-cli state joint
 limx-cli state imu
 
-# 动作和舞蹈
+# Actions and dances
 limx-cli action list
 limx-cli action run --name wave_greet_bye --timeout 120
 limx-cli dance list
 limx-cli dance run --rc-mapping solo_shake --timeout 660
 
-# 运动控制
+# Motion control
 limx-cli motion standup
 limx-cli motion walk --x 0.1 --y 0 --yaw 0 --duration 2
 limx-cli motion sit
 
-# 表情和音量
+# Emojis and volume
 limx-cli emoji list
 limx-cli emoji set smile
 limx-cli audio set-volume 60
 ```
 
-`limx-cli` 默认输出 JSON，适合 Agent 或自动化脚本直接解析：
+`limx-cli` outputs JSON by default, making it easy for Agents and automation scripts to parse:
 
 ```bash
 limx-cli state mode
@@ -160,108 +160,108 @@ limx-cli action list
 limx-cli --dry-run motion walk --x 0.1 --duration 3
 ```
 
-`--dry-run` 会展示计划发送的请求，但不会真实控制机器人。
+`--dry-run` shows the planned request without controlling the robot.
 
-### 5.3 Agent Skill 使用
+### 5.3 Agent Skill Usage
 
-仓库提供了 `SKILL.md`，用于让 OpenClaw、ZeroClaw、Cursor、Claude Code 等支持 Agent Skill 的工具理解如何安全调用 `limx-cli`。
+The repository provides `SKILL.md` so OpenClaw, ZeroClaw, Cursor, Claude Code, and other Agent Skill compatible tools can understand how to call `limx-cli` safely.
 
-使用方式：
+Usage:
 
-1. 先按第 4 节安装 `limx-cli`，确认当前 shell 可以直接执行：
+1. Install `limx-cli` following Section 4 and confirm it is available in the current shell:
 
 ```bash
 limx-cli --help
 ```
 
-2. 将 `agent-harness/SKILL.md` 添加到对应工具的 skill 目录，或在工具配置中引用这个文件。
+2. Add `agent-harness/SKILL.md` to the skill directory of the corresponding tool, or reference this file in the tool configuration.
 
-常见放置方式：
+Common locations:
 
-| 工具 | 使用方式 |
+| Tool | Usage |
 | --- | --- |
-| OpenClaw / ZeroClaw | 将 `SKILL.md` 放入项目或工作区的 skills 目录，并让 Agent 加载该 skill |
-| Cursor | 将 `SKILL.md` 放入 Cursor 可发现的 skill 目录，或随项目一起打开后让 Agent 读取 |
-| Claude Code | 可复制到 `~/.claude/skills/limx-agent-harness/SKILL.md` |
+| OpenClaw / ZeroClaw | Place `SKILL.md` in the project or workspace skills directory and let the Agent load it |
+| Cursor | Place `SKILL.md` in a Cursor-discoverable skill directory, or open it with the project so the Agent can read it |
+| Claude Code | Copy it to `~/.claude/skills/limx-agent-harness/SKILL.md` |
 
-3. 设置机器人连接环境变量：
+3. Set robot connection environment variables:
 
 ```bash
 export LIMX_ROBOT_HOST=10.192.1.2
 export LIMX_ROBOT_PORT=5000
 ```
 
-4. 在 Agent 中提出自然语言任务，例如：
+4. Ask the Agent natural-language tasks, for example:
 
 ```text
-查看机器人当前状态
-列出可用动作
-dry-run 规划一次向前走 0.1m/s 持续 3 秒
+Check the current robot state
+List available actions
+Plan a dry-run forward walk at 0.1 m/s for 3 seconds
 ```
 
-`SKILL.md` 会指导 Agent 优先使用 JSON 输出、先 dry-run 高风险动作，并通过已有 CLI 子命令调用机器人能力。
+`SKILL.md` guides the Agent to prefer JSON output, dry-run high-risk motions first, and use existing CLI subcommands to access robot capabilities.
 
-### 5.4 Scratch 图形化编程
+### 5.4 Scratch Visual Programming
 
-![Oli Robot Scratch 图形化编程演示](docs/oli-robot-programming.gif)
+![Oli Robot Scratch Visual Programming Demo](docs/oli-robot-programming.gif)
 
-启动 Scratch 本地服务：
+Start the Scratch local service:
 
 ```bash
 limx-scratch
 ```
 
-如果要让同一局域网内的手机、平板或 WebView 访问：
+To allow phones, tablets, or WebViews on the same LAN to access it:
 
 ```bash
 limx-scratch --listen-host 0.0.0.0 --listen-port 6080
 ```
 
-然后在浏览器打开 `limx-scratch` 输出的 Scratch 页面地址。
+Open the Scratch page address printed by `limx-scratch` in a browser.
 
-Scratch 页面会出现 `LimX Robot` 分类，常用积木包括：
+The Scratch page shows the `LimX Robot` category. Common blocks include:
 
-- 查询机器人状态。
-- 进入站立、行走、阻尼、零力矩等模式。
-- 执行动作和舞蹈。
-- 按 `x/y/yaw` 行走指定时长。
-- 设置表情和音量。
-- 刷新动作和舞蹈列表。
-- 停止机器人。
+- Query robot state.
+- Enter stand, walk, damp, and zero-torque modes.
+- Run actions and dances.
+- Walk for a specified duration with `x/y/yaw`.
+- Set emojis and volume.
+- Refresh action and dance lists.
+- Stop the robot.
 
-课堂或演示模式可以使用 dry-run：
+Classroom and demo modes can use dry-run:
 
 ```bash
 limx-scratch --dry-run
 ```
 
-## 6. 环境变量
+## 6. Environment Variables
 
-| 环境变量 | 默认值 | 说明 |
+| Environment Variable | Default | Description |
 | --- | --- | --- |
-| `LIMX_ROBOT_HOST` | `10.192.1.2` | WebSocket API 主机 |
-| `LIMX_ROBOT_PORT` | `5000` | WebSocket API 端口 |
-| `LIMX_SCRATCH_LISTEN_HOST` | `0.0.0.0` | Scratch 本地服务监听地址 |
-| `LIMX_SCRATCH_LISTEN_PORT` | `6080` | Scratch 本地服务监听端口 |
-| `LIMX_SCRATCH_MENU_TIMEOUT` | `5` | 动作/舞蹈菜单预加载超时 |
-| `LIMX_SCRATCH_PYTHON` | `python3` | Python 可执行文件 |
+| `LIMX_ROBOT_HOST` | `10.192.1.2` | WebSocket API host |
+| `LIMX_ROBOT_PORT` | `5000` | WebSocket API port |
+| `LIMX_SCRATCH_LISTEN_HOST` | `0.0.0.0` | Scratch local service listen address |
+| `LIMX_SCRATCH_LISTEN_PORT` | `6080` | Scratch local service listen port |
+| `LIMX_SCRATCH_MENU_TIMEOUT` | `5` | Action/dance menu preload timeout |
+| `LIMX_SCRATCH_PYTHON` | `python3` | Python executable |
 
-## 7. 测试
+## 7. Tests
 
-运行单元测试：
+Run unit tests:
 
 ```bash
 cd agent-harness
 python3 -m pytest tests/ -q
 ```
 
-如果没有安装 pytest：
+If pytest is not installed:
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-机器人冒烟测试按风险从低到高执行：
+Run robot smoke tests from lower risk to higher risk:
 
 ```bash
 limx-cli state mode
@@ -271,12 +271,12 @@ limx-cli dance list
 limx-cli --dry-run motion walk --x 0.05 --duration 1
 ```
 
-## 8. 开源说明
+## 8. Open Source Notes
 
-LimX Agent Harness 旨在提供一个更易用、更可组合的机器人技能入口：AI Agent 可以调用，开发者可以脚本化，普通用户可以拖积木。
+LimX Agent Harness provides an easier and more composable entry point for robot skills: AI Agents can call it, developers can script it, and users can build behaviors with blocks.
 
-许可证说明：
+License notes:
 
-- 除第三方组件外，LimX Agent Harness 自研部分采用 Apache License 2.0。
-- `scratch-app` 基于 Scratch GUI，保留其原始 GPL-3.0 许可证声明和版权信息。
-- 如果发布内容包含 `scratch-app` 或由其构建生成的 Scratch 页面，需要同时遵守 GPL-3.0 的分发要求。
+- Except for third-party components, the self-developed parts of LimX Agent Harness are licensed under the Apache License 2.0.
+- `scratch-app` is based on Scratch GUI and retains its original GPL-3.0 license notices and copyright information.
+- If a release includes `scratch-app` or Scratch pages built from it, the distribution must also comply with GPL-3.0 requirements.
