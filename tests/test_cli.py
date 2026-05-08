@@ -3,7 +3,7 @@ import json
 import unittest
 from contextlib import redirect_stdout
 
-from limx_agent_harness.cli import (
+from agent_harness.cli import (
     action_library_is_running,
     build_parser,
     command_count,

@@ -14,7 +14,7 @@ if (!fs.existsSync(SCRATCH_VM_ENTRY)) {
     error: 'scratch-vm not found',
     scratchApp: SCRATCH_APP,
     expected: SCRATCH_VM_ENTRY,
-    hint: 'Set LIMX_SCRATCH_APP_DIR to the built scratch-app source directory or deploy scratch-app beside limx_agent_harness.'
+    hint: 'Set LIMX_SCRATCH_APP_DIR to the built scratch-app source directory or deploy scratch-app beside agent_harness.'
   }) + '\n');
   process.exit(1);
 }

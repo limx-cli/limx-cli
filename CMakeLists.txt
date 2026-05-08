@@ -29,13 +29,12 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/.node-runtime"
   "${CMAKE_CURRENT_SOURCE_DIR}/target"
   "${CMAKE_CURRENT_SOURCE_DIR}/scratch-static"
-  "${CMAKE_CURRENT_SOURCE_DIR}/limx_agent_harness/vendor/scratch-app"
-  "${CMAKE_CURRENT_SOURCE_DIR}/build"
+  "${CMAKE_CURRENT_SOURCE_DIR}/agent_harness/vendor/scratch-app"
   "${CMAKE_CURRENT_SOURCE_DIR}/dist"
   "${CMAKE_CURRENT_SOURCE_DIR}/limx_agent_harness.egg-info"
   "${CMAKE_CURRENT_SOURCE_DIR}/__pycache__"
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/__pycache__"
-  "${CMAKE_CURRENT_SOURCE_DIR}/limx_agent_harness/__pycache__"
+  "${CMAKE_CURRENT_SOURCE_DIR}/agent_harness/__pycache__"
 )
 
 set(_agent_harness_effective_node_arch "${AGENT_HARNESS_NODE_ARCH}")

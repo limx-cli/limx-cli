@@ -12,11 +12,11 @@ dependencies = [
 ]
 
 [project.scripts]
-limx-cli = "limx_agent_harness.cli:main"
-limx-scratch = "limx_agent_harness.scratch_bridge:main"
+limx-cli = "agent_harness.cli:main"
+limx-scratch = "agent_harness.scratch_bridge:main"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.package-data]
-limx_agent_harness = ["*.js", "vendor/**/*"]
+agent_harness = ["*.js", "vendor/**/*"]

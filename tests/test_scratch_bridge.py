@@ -4,7 +4,7 @@ import unittest
 import zipfile
 from unittest import mock
 
-from limx_agent_harness.scratch_bridge import (
+from agent_harness.scratch_bridge import (
     SCRATCH_EXTENSION_JS,
     BridgeConfig,
     ProjectRunner,
@@ -210,7 +210,7 @@ class ScratchBridgeTest(unittest.TestCase):
         fake_process.poll.return_value = None
         fake_process.stdout = []
         fake_process.stderr = []
-        with mock.patch("limx_agent_harness.scratch_bridge.subprocess.Popen", return_value=fake_process) as popen:
+        with mock.patch("agent_harness.scratch_bridge.subprocess.Popen", return_value=fake_process) as popen:
             result = runner.start("/tmp/project.sb3")
 
         self.assertEqual("success", result["result"])

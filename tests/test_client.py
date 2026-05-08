@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from limx_agent_harness.client import RobotLockIdentity, SignalingClient
+from agent_harness.client import RobotLockIdentity, SignalingClient
 
 
 class FakeWebSocketApp:

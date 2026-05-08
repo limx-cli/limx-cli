@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SCRATCH_SRC="$PROJECT_DIR/scratch-app"
 SCRATCH_OUT="$PROJECT_DIR/scratch-static"
-VENDOR_SCRATCH_APP="$PROJECT_DIR/limx_agent_harness/vendor/scratch-app"
+VENDOR_SCRATCH_APP="$PROJECT_DIR/agent_harness/vendor/scratch-app"
 TARGET_DIR="${LIMX_SCRATCH_TARGET_DIR:-$PROJECT_DIR/target}"
 PID_FILE="$PROJECT_DIR/.scratch-bridge.pid"
 LOG_FILE="$PROJECT_DIR/.scratch-bridge.log"
@@ -172,12 +172,11 @@ clean_outputs() {
         "$VENDOR_SCRATCH_APP" \
         "$TARGET_DIR" \
         "$NODE_CACHE_DIR" \
-        "$PROJECT_DIR/build" \
         "$PROJECT_DIR/dist" \
         "$PROJECT_DIR/limx_agent_harness.egg-info" \
         "$PROJECT_DIR/__pycache__" \
         "$PROJECT_DIR/tests/__pycache__" \
-        "$PROJECT_DIR/limx_agent_harness/__pycache__"
+        "$PROJECT_DIR/agent_harness/__pycache__"
     rm -f "$PID_FILE" "$LOG_FILE"
     if [ "$CLEAN_DEPS" -eq 1 ]; then
         echo "Cleaning npm dependencies ..."
@@ -209,7 +208,7 @@ dst_node_modules.mkdir(parents=True, exist_ok=True)
 package = {
     "name": "limx-scratch-runner-runtime",
     "private": True,
-    "description": "Minimal runtime dependencies for limx_agent_harness/scratch_runner.js",
+    "description": "Minimal runtime dependencies for agent_harness/scratch_runner.js",
 }
 (dst / "package.json").write_text(json.dumps(package, indent=2) + "\n")
 
@@ -424,7 +423,7 @@ if [ -x "$BUNDLED_NODE" ]; then
     export PATH="$DIR/node/bin:$PATH"
 fi
 
-exec "$PYTHON_BIN" -m limx_agent_harness.scratch_bridge \
+exec "$PYTHON_BIN" -m agent_harness.scratch_bridge \
     --static-dir "$DIR/scratch-static" \
     "$@"
 SH
@@ -452,7 +451,7 @@ if [ -x "$BUNDLED_NODE" ]; then
     export PATH="$DIR/node/bin:$PATH"
 fi
 
-exec "$PYTHON_BIN" -m limx_agent_harness.cli "$@"
+exec "$PYTHON_BIN" -m agent_harness.cli "$@"
 SH
     chmod +x "$TARGET_DIR/limx-cli"
 
@@ -536,7 +535,7 @@ for pid in os.listdir("/proc"):
         continue
     parts = [p.decode("utf-8", "ignore") for p in raw.split(b"\0") if p]
     text = " ".join(parts)
-    if "limx_agent_harness.scratch_bridge" not in text and "limx-scratch" not in text and "scratch_bridge" not in text:
+    if "agent_harness.scratch_bridge" not in text and "limx-scratch" not in text and "scratch_bridge" not in text:
         continue
     if "--listen-port" in parts:
         idx = parts.index("--listen-port")
@@ -565,7 +564,7 @@ run_bridge() {
     stop_existing_bridge
 
     args=(
-        -m limx_agent_harness.scratch_bridge
+        -m agent_harness.scratch_bridge
         --listen-host "$LISTEN_HOST"
         --listen-port "$LISTEN_PORT"
         --robot-host "$ROBOT_HOST"
