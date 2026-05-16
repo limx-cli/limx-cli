@@ -216,6 +216,8 @@ class LimXRobotExtension {
           arguments: {NAME: {type: 'string', menu: 'actionNames', defaultValue: this.actionMenu[0] || 'wave_greet_bye'}}},
         {opcode: 'danceRun', blockType: 'command', text: 'dance [RC_MAPPING]',
           arguments: {RC_MAPPING: {type: 'string', menu: 'danceMappings', defaultValue: this.danceMenu[0] || 'solo_shake'}}},
+        {opcode: 'emojiSet', blockType: 'command', text: 'set emoji [NAME]',
+          arguments: {NAME: {type: 'string', menu: 'emojiNames', defaultValue: this.emojiMenu[0] || 'screen-default'}}},
         {opcode: 'standup', blockType: 'command', text: 'stand up'},
         {opcode: 'sit', blockType: 'command', text: 'sit'},
         {opcode: 'lieDown', blockType: 'command', text: 'lie down'},
@@ -229,7 +231,8 @@ class LimXRobotExtension {
       menus: {
         stateKinds: {acceptReporters: true, items: ['running', 'joint', 'imu']},
         actionNames: {acceptReporters: false, items: this.actionMenu},
-        danceMappings: {acceptReporters: false, items: this.danceMenu}
+        danceMappings: {acceptReporters: false, items: this.danceMenu},
+        emojiNames: {acceptReporters: false, items: this.emojiMenu}
       }
     };
   }
@@ -238,6 +241,7 @@ class LimXRobotExtension {
     this.last = '';
     this.actionValuesByLabel = {};
     this.danceValuesByLabel = {};
+    this.emojiValuesByLabel = {};
     this.stateValuesByLabel = {running: 'work_mode', joint: 'joint', imu: 'imu'};
     this.actionMenu = buildMenu(
       [{value: 'wave_greet_bye', zh: '挥手告别', en: 'wave_greet_bye'}],
@@ -246,6 +250,10 @@ class LimXRobotExtension {
     this.danceMenu = buildMenu(
       [{value: 'solo_shake', zh: '孤身摇', en: 'solo_shake'}],
       [], this.danceValuesByLabel
+    );
+    this.emojiMenu = buildMenu(
+      [{value: 'screen-default', zh: 'screen-default', en: 'screen-default'}],
+      [], this.emojiValuesByLabel
     );
   }
 
@@ -274,6 +282,10 @@ class LimXRobotExtension {
 
   danceRun(args) {
     return this.remember(enqueue('dance_run', {name: resolveMenuValue(this.danceValuesByLabel, args.RC_MAPPING)}));
+  }
+
+  emojiSet(args) {
+    return this.remember(enqueue('emoji_set', {name: resolveMenuValue(this.emojiValuesByLabel, args.NAME)}));
   }
 
   walk(args) {

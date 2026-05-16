@@ -17,10 +17,10 @@ class GreenFlagOverlay extends React.Component {
         ]);
     }
 
-    handleClick (e) {
+    async handleClick (e) {
         e.preventDefault();
         e.stopPropagation();
-        const started = runCurrentProgram(this.props.vm);
+        const started = await runCurrentProgram(this.props.vm);
 
         // FIXME: some unknown edge cases are causing start() to be called but for the
         // RUNTIME_STARTED listener to not update redux, causing this to always be

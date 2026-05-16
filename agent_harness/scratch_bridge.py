@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, quote, urlparse
 
-from .client import RobotLockIdentity, SignalingClient
+from .client import SignalingClient
 
 
 DEFAULT_LISTEN_HOST = "0.0.0.0"
@@ -31,6 +31,7 @@ READ_ONLY_BRIDGE_COMMANDS = {
     "action_status",
     "action_list",
     "dance_list",
+    "emoji_list",
     "state",
     "work_mode",
 }
@@ -167,13 +168,59 @@ SCRATCH_EXTENSION_JS = r"""
 
   const initialActionMenu = __LIMX_ACTION_MENU__;
   const initialDanceMenu = __LIMX_DANCE_MENU__;
+  const initialEmojiMenu = __LIMX_EMOJI_MENU__;
   const robotName = __LIMX_ROBOT_NAME__;
+  const supportsPostureBlocks = __LIMX_SUPPORTS_POSTURE_BLOCKS__;
+  const supportsEmojiBlocks = __LIMX_SUPPORTS_EMOJI_BLOCKS__;
   const LIMX_BLOCK_PRIMARY = '#17C7FF';
   const LIMX_BLOCK_SECONDARY = '#0F8FBD';
   const LIMX_BLOCK_TERTIARY = '#075C86';
   const LIMX_DANGER_PRIMARY = '#FF5A66';
   const LIMX_DANGER_SECONDARY = '#D9364A';
   const LIMX_DANGER_TERTIARY = '#981B2D';
+
+  function postureBlocks() {
+    if (!supportsPostureBlocks) {
+      return [];
+    }
+    return [
+      {
+        opcode: 'standup',
+        blockType: Scratch.BlockType.COMMAND,
+        text: t('站起', 'stand up')
+      },
+      {
+        opcode: 'sit',
+        blockType: Scratch.BlockType.COMMAND,
+        text: t('坐下', 'sit')
+      },
+      {
+        opcode: 'lieDown',
+        blockType: Scratch.BlockType.COMMAND,
+        text: t('躺下', 'lie down')
+      }
+    ];
+  }
+
+  function emojiBlocks() {
+    if (!supportsEmojiBlocks) {
+      return [];
+    }
+    return [
+      {
+        opcode: 'emojiSet',
+        blockType: Scratch.BlockType.COMMAND,
+        text: t('切换表情 [NAME]', 'set emoji [NAME]'),
+        arguments: {
+          NAME: {
+            type: Scratch.ArgumentType.STRING,
+            menu: 'emojiNames',
+            defaultValue: this.emojiMenu[0] || 'screen-default'
+          }
+        }
+      }
+    ];
+  }
 
   class LimXRobotExtension {
     getInfo() {
@@ -231,21 +278,8 @@ SCRATCH_EXTENSION_JS = r"""
               }
             }
           },
-          {
-            opcode: 'standup',
-            blockType: Scratch.BlockType.COMMAND,
-            text: t('站起', 'stand up')
-          },
-          {
-            opcode: 'sit',
-            blockType: Scratch.BlockType.COMMAND,
-            text: t('坐下', 'sit')
-          },
-          {
-            opcode: 'lieDown',
-            blockType: Scratch.BlockType.COMMAND,
-            text: t('躺下', 'lie down')
-          },
+          ...emojiBlocks.call(this),
+          ...postureBlocks(),
           {
             opcode: 'enterStandMode',
             blockType: Scratch.BlockType.COMMAND,
@@ -295,6 +329,10 @@ SCRATCH_EXTENSION_JS = r"""
           danceMappings: {
             acceptReporters: false,
             items: this.danceMenu
+          },
+          emojiNames: {
+            acceptReporters: false,
+            items: this.emojiMenu
           }
         }
       };
@@ -304,12 +342,14 @@ SCRATCH_EXTENSION_JS = r"""
       this.last = '';
       this.actionValuesByLabel = {};
       this.danceValuesByLabel = {};
+      this.emojiValuesByLabel = {};
       this.stateValuesByLabel = {};
       this.stateValuesByLabel[t('运行', 'running')] = 'work_mode';
       this.stateValuesByLabel[t('关节', 'joint')] = 'joint';
       this.stateValuesByLabel[t('IMU', 'imu')] = 'imu';
       this.actionMenu = initialMenu(initialActionMenu, [{value: 'wave_greet_bye', zh: '挥手告别', en: 'wave_greet_bye'}], this.actionValuesByLabel);
       this.danceMenu = initialMenu(initialDanceMenu, [{value: 'solo_shake', zh: '孤身摇', en: 'solo_shake'}], this.danceValuesByLabel);
+      this.emojiMenu = initialMenu(initialEmojiMenu, [{value: 'screen-default', zh: 'screen-default', en: 'screen-default'}], this.emojiValuesByLabel);
     }
 
     async remember(promise) {
@@ -323,6 +363,10 @@ SCRATCH_EXTENSION_JS = r"""
 
     getDanceMenu() {
       return this.danceMenu;
+    }
+
+    getEmojiMenu() {
+      return this.emojiMenu;
     }
 
     async refreshActionMenu() {
@@ -367,12 +411,31 @@ SCRATCH_EXTENSION_JS = r"""
       }
     }
 
+    async refreshEmojiMenu() {
+      if (!supportsEmojiBlocks) return;
+      const data = parseResult(await enqueue('emoji_list'));
+      const emojis = Array.isArray(data.emoji_list) ? data.emoji_list : [];
+      const items = [];
+      const seen = new Set();
+      for (const emoji of emojis) {
+        const value = String(emoji || '').trim();
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        items.push({value, zh: value, en: value});
+      }
+      if (items.length) {
+        this.emojiValuesByLabel = {};
+        this.emojiMenu = initialMenu(items, [], this.emojiValuesByLabel);
+      }
+    }
+
     async loadMenus() {
-      await Promise.all([this.refreshActionMenu(), this.refreshDanceMenu()]);
+      await Promise.all([this.refreshActionMenu(), this.refreshDanceMenu(), this.refreshEmojiMenu()]);
       this.last = JSON.stringify({
         result: 'success',
         action_menu_count: this.actionMenu.length,
-        dance_menu_count: this.danceMenu.length
+        dance_menu_count: this.danceMenu.length,
+        emoji_menu_count: this.emojiMenu.length
       });
       return this.last;
     }
@@ -391,6 +454,10 @@ SCRATCH_EXTENSION_JS = r"""
 
     danceList() {
       return this.remember(enqueue('dance_list'));
+    }
+
+    emojiList() {
+      return this.remember(enqueue('emoji_list'));
     }
 
     refreshMenus() {
@@ -459,7 +526,7 @@ SCRATCH_EXTENSION_JS = r"""
     }
 
     emojiSet(args) {
-      return this.remember(enqueue('emoji_set', {name: args.NAME}));
+      return this.remember(enqueue('emoji_set', {name: resolveMenuValue(this.emojiValuesByLabel, args.NAME)}));
     }
 
     volumeSet(args) {
@@ -488,6 +555,7 @@ class BridgeConfig:
         node: Optional[str] = None,
         action_menu: Optional[List[Dict[str, str]]] = None,
         dance_menu: Optional[List[Dict[str, str]]] = None,
+        emoji_menu: Optional[List[Dict[str, str]]] = None,
         static_dir: Optional[str] = None,
         robot_accid: str = "",
         robot_name: str = "LimX",
@@ -501,6 +569,7 @@ class BridgeConfig:
         self.node = node or default_node_path()
         self.action_menu = action_menu or [{"value": "wave_greet_bye", "zh": "挥手告别", "en": "wave_greet_bye"}]
         self.dance_menu = dance_menu or [{"value": "solo_shake", "zh": "孤身摇", "en": "solo_shake"}]
+        self.emoji_menu = emoji_menu or [{"value": "screen-default", "zh": "screen-default", "en": "screen-default"}]
         self.static_dir = static_dir
         self.robot_accid = robot_accid
         self.robot_name = robot_name
@@ -606,7 +675,7 @@ class ProjectRunner:
 
     @property
     def project_dir(self) -> str:
-        d = self._config.project_dir or DEFAULT_PROJECT_DIR
+        d = robot_project_dir(self._config)
         os.makedirs(d, exist_ok=True)
         self._migrate_legacy_projects(d)
         return d
@@ -895,7 +964,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             file=sys.stderr,
         )
     print(
-        f"Scratch menus start with defaults: actions={len(config.action_menu)}, dances={len(config.dance_menu)}",
+        f"Scratch menus start with defaults: actions={len(config.action_menu)}, dances={len(config.dance_menu)}, emojis={len(config.emoji_menu)}",
         file=sys.stderr,
     )
     start_menu_preload(config)
@@ -913,7 +982,16 @@ def render_extension_js(config: BridgeConfig, lang: str = "") -> str:
     return (
         SCRATCH_EXTENSION_JS.replace("__LIMX_ACTION_MENU__", json.dumps(config.action_menu, ensure_ascii=False))
         .replace("__LIMX_DANCE_MENU__", json.dumps(config.dance_menu, ensure_ascii=False))
+        .replace("__LIMX_EMOJI_MENU__", json.dumps(config.emoji_menu, ensure_ascii=False))
         .replace("__LIMX_ROBOT_NAME__", json.dumps(config.robot_name, ensure_ascii=False))
+        .replace(
+            "__LIMX_SUPPORTS_POSTURE_BLOCKS__",
+            json.dumps(robot_supports_posture_blocks(config.robot_accid), ensure_ascii=False),
+        )
+        .replace(
+            "__LIMX_SUPPORTS_EMOJI_BLOCKS__",
+            json.dumps(robot_supports_emoji_blocks(config.robot_accid), ensure_ascii=False),
+        )
         .replace("__LIMX_LANG__", json.dumps(normalize_bridge_lang(lang), ensure_ascii=False))
     )
 
@@ -956,8 +1034,17 @@ def refresh_startup_menus(config: BridgeConfig) -> None:
     except Exception as exc:
         print(f"[scratch-bridge] failed to preload dance list: {exc}", file=sys.stderr)
 
+    if robot_supports_emoji_blocks(config.robot_accid):
+        try:
+            emoji_data = run_bridge_command("emoji_list", {}, menu_config)
+            emoji_menu = extract_emoji_menu(emoji_data)
+            if emoji_menu:
+                config.emoji_menu = emoji_menu
+        except Exception as exc:
+            print(f"[scratch-bridge] failed to preload emoji list: {exc}", file=sys.stderr)
+
     print(
-        f"[scratch-bridge] Scratch menus loaded: actions={len(config.action_menu)}, dances={len(config.dance_menu)}",
+        f"[scratch-bridge] Scratch menus loaded: actions={len(config.action_menu)}, dances={len(config.dance_menu)}, emojis={len(config.emoji_menu)}",
         file=sys.stderr,
     )
 
@@ -969,6 +1056,31 @@ def robot_name_from_accid(accid: str) -> str:
     if value.startswith("HU_L"):
         return "Luna"
     return "LimX"
+
+
+def robot_project_name(config: BridgeConfig) -> str:
+    if config.robot_accid:
+        name = robot_name_from_accid(config.robot_accid)
+    else:
+        name = config.robot_name or ""
+    return name if name in ("Oli", "Luna") else ""
+
+
+def robot_project_dir(config: BridgeConfig) -> str:
+    ensure_robot_info(config)
+    base_dir = config.project_dir or DEFAULT_PROJECT_DIR
+    robot_name = os.path.basename(robot_project_name(config))
+    if not robot_name:
+        return base_dir
+    return os.path.join(base_dir, robot_name)
+
+
+def robot_supports_posture_blocks(accid: str) -> bool:
+    return not str(accid or "").strip().upper().startswith("HU_L")
+
+
+def robot_supports_emoji_blocks(accid: str) -> bool:
+    return str(accid or "").strip().upper().startswith("HU_L")
 
 
 def ensure_robot_info(config: BridgeConfig) -> None:
@@ -1031,6 +1143,23 @@ def extract_dance_menu(data: Dict[str, Any]) -> List[Dict[str, str]]:
         if item and item["value"] not in seen:
             seen.add(item["value"])
             items.append(item)
+    return items
+
+
+def extract_emoji_menu(data: Dict[str, Any]) -> List[Dict[str, str]]:
+    emojis = data.get("emoji_list")
+    if not isinstance(emojis, list):
+        return []
+    items = []
+    seen = set()
+    for emoji in emojis:
+        if emoji is None:
+            continue
+        value = str(emoji).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        items.append({"value": value, "zh": value, "en": value})
     return items
 
 
@@ -1258,7 +1387,9 @@ def make_handler(config: BridgeConfig):
                     if not os.path.isfile(project_path):
                         self.send_json({"result": "fail", "message": f"project not found: {name}"}, 404)
                         return
+                    stop_modes_result = stop_action_dance_modes(config)
                     result = config.runner.start(project_path)
+                    result["stop_modes"] = stop_modes_result
                     self.send_json(result)
                 except Exception as exc:
                     self.send_json({"result": "fail", "message": str(exc)}, 400)
@@ -1266,6 +1397,10 @@ def make_handler(config: BridgeConfig):
 
             if path == "/project/stop":
                 self.send_json(stop_project_execution(config))
+                return
+
+            if path == "/project/stop-modes":
+                self.send_json(stop_action_dance_modes(config))
                 return
 
             if path == "/project/delete":
@@ -1415,6 +1550,7 @@ def run_bridge_command(command: str, args: Dict[str, Any], config: BridgeConfig)
 
 def stop_project_execution(config: BridgeConfig) -> Dict[str, Any]:
     command_result = stop_active_command(config)
+    modes_result = stop_action_dance_modes(config)
     robot_result = stop_robot_motion(config)
     if config.runner:
         threading.Thread(target=config.runner.stop, daemon=True).start()
@@ -1425,6 +1561,7 @@ def stop_project_execution(config: BridgeConfig) -> Dict[str, Any]:
         "result": "success",
         "command": command_result,
         "robot_stop": robot_result,
+        "stop_modes": modes_result,
         "runner": runner_result,
     }
 
@@ -1462,16 +1599,6 @@ def stop_robot_motion(config: BridgeConfig) -> Dict[str, Any]:
     )
     try:
         client.connect()
-        identity = RobotLockIdentity(user_name="agent", user_id="agent", device_id="limx-agent-harness")
-        try:
-            client.request("request_unlock_robot_control", identity.as_request_data(), 2.0)
-            time.sleep(0.05)
-        except Exception:
-            pass
-        try:
-            client.lock(identity)
-        except Exception:
-            pass
         results = []
         for _ in range(3):
             results.append(client.request("request_set_walk_vel_sync", stop, 2.0))
@@ -1481,10 +1608,38 @@ def stop_robot_motion(config: BridgeConfig) -> Dict[str, Any]:
     except Exception as exc:
         return {"result": "fail_robot_stop", "message": str(exc)}
     finally:
-        try:
-            client.unlock()
-        except Exception:
-            pass
+        client.close()
+
+
+def stop_action_dance_modes(config: BridgeConfig) -> Dict[str, Any]:
+    if config.dry_run:
+        return {
+            "result": "success",
+            "dry_run": True,
+            "requests": [
+                {"title": "request_set_motion_engine", "data": {"mode": 0}},
+                {"title": "request_enter_dance_mode", "data": {"mode": 0}},
+            ],
+        }
+    client = SignalingClient(
+        config.robot_host,
+        config.robot_port,
+        connect_timeout=min(config.menu_timeout, 3.0),
+        default_timeout=3.0,
+    )
+    try:
+        client.connect()
+        action_result = client.request("request_set_motion_engine", {"mode": 0}, 3.0)
+        dance_result = client.request("request_enter_dance_mode", {"mode": 0}, 3.0)
+        ok = bridge_result_is_success(action_result) or bridge_result_is_success(dance_result)
+        return {
+            "result": "success" if ok else "fail_stop_modes",
+            "action_exit": action_result,
+            "dance_exit": dance_result,
+        }
+    except Exception as exc:
+        return {"result": "fail_stop_modes", "message": str(exc)}
+    finally:
         client.close()
 
 
@@ -1512,6 +1667,8 @@ def build_cli_args(command: str, args: Dict[str, Any], config: BridgeConfig) -> 
         return [*base, "action", "list"]
     if command == "dance_list":
         return [*base, "dance", "list"]
+    if command == "emoji_list":
+        return [*base, "emoji", "list"]
     if command == "state":
         return [*base, "state", state_kind(args)]
     if command == "work_mode":
@@ -1520,8 +1677,14 @@ def build_cli_args(command: str, args: Dict[str, Any], config: BridgeConfig) -> 
         return [*base, "action", "enter"]
     if command == "action_exit":
         return [*base, "action", "exit"]
+    if command == "action_stop":
+        return [*base, "action", "stop"]
     if command == "dance_mode":
         return [*base, "dance", "enter"]
+    if command == "dance_stop":
+        return [*base, "dance", "stop"]
+    if command == "dance_exit":
+        return [*base, "dance", "exit"]
     if command == "walk_mode":
         return [*base, "raw", "request_set_walk_mode", "--data", "{}"]
     if command == "stand_mode":

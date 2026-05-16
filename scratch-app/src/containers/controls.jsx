@@ -46,7 +46,7 @@ class Controls extends React.Component {
             'handleStopAllClick'
         ]);
     }
-    handleGreenFlagClick (e) {
+    async handleGreenFlagClick (e) {
         e.preventDefault();
         e.stopPropagation();
         // tw: implement alt+click and right click to toggle FPS
@@ -62,7 +62,7 @@ class Controls extends React.Component {
                 }
             }
         } else {
-            runCurrentProgram(this.props.vm);
+            await runCurrentProgram(this.props.vm);
         }
     }
     handleStopAllClick (e) {

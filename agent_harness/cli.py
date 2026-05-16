@@ -59,8 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--connect-timeout", type=float, default=10.0)
     parser.add_argument("--json", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--dry-run", action="store_true", help="Print planned request(s) without connecting")
-    parser.add_argument("--no-lock", action="store_true", help="Do not acquire robot control for mutating commands")
-    parser.add_argument("--keep-lock", action="store_true", help="Keep control lock after command completion")
+    parser.add_argument("--lock", action="store_true", help="Acquire robot control for mutating commands")
     parser.add_argument("--user", default=env_default("USER", "agent"))
     parser.add_argument("--user-id", default=env_default("USER_ID", "agent"))
     parser.add_argument("--device-id", "--device", default=env_default("DEVICE_ID", "limx-agent-harness"))
@@ -85,7 +84,7 @@ def add_raw_commands(subparsers: argparse._SubParsersAction) -> None:
     raw = subparsers.add_parser("raw", help="Send any request_* title")
     raw.add_argument("title")
     raw.add_argument("--data", default="{}", help="JSON request data object")
-    raw.add_argument("--lock", action="store_true", help="Acquire control before sending")
+    raw.add_argument("--lock", action="store_true", default=argparse.SUPPRESS, help="Acquire control before sending")
     raw.set_defaults(handler=handle_raw)
 
 
@@ -104,6 +103,9 @@ def add_action_commands(subparsers: argparse._SubParsersAction) -> None:
     commands.add_parser("status", help="Show action library status").set_defaults(handler=handle_action_status)
     commands.add_parser("enter", help="Enter action library mode").set_defaults(handler=handle_action_enter)
     commands.add_parser("exit", help="Exit action library mode").set_defaults(handler=handle_action_exit)
+    commands.add_parser("stop", help="Interrupt current action and exit action library mode").set_defaults(
+        handler=handle_action_stop
+    )
     run = commands.add_parser("run", help="Run one atomic motion")
     run.add_argument("--name", required=True, help="Action-library name from action list")
     run.add_argument("--timeout", type=float, default=120.0)
@@ -114,9 +116,15 @@ def add_dance_commands(subparsers: argparse._SubParsersAction) -> None:
     dance = subparsers.add_parser("dance", help="Dance library")
     commands = dance.add_subparsers(dest="dance_command", required=True)
     commands.add_parser("enter", help="Enter dance mode").set_defaults(handler=handle_dance_enter)
+    commands.add_parser("stop", help="Interrupt current dance and exit dance mode").set_defaults(
+        handler=handle_dance_stop
+    )
+    commands.add_parser("exit", help="Exit dance mode and return to walk mode").set_defaults(
+        handler=handle_dance_stop
+    )
     commands.add_parser("list", help="List dances").set_defaults(handler=handle_dance_list)
     run = commands.add_parser("run", help="Run a dance or comma-separated action sequence")
-    run.add_argument("--rc-mapping", required=True, help="Dance rc_mapping value from `dance list`")
+    run.add_argument("--rc-mapping", "--rc_mapping", required=True, help="Dance rc_mapping value from `dance list`")
     run.add_argument("--music", help="Optional music file or comma-separated music list")
     run.add_argument("--timeout", type=float, default=LONG_TASK_TIMEOUT)
     run.set_defaults(handler=handle_dance_run)
@@ -202,8 +210,6 @@ def handle_lock_acquire(args: argparse.Namespace) -> Dict[str, Any]:
         client.connect()
         result = client.lock(identity(args))
         emit(result, args)
-        if result_is_success(result) and args.keep_lock:
-            hold_lock_until_interrupt(client, args)
         return result
     finally:
         client.close()
@@ -264,11 +270,9 @@ def handle_action_exit(args: argparse.Namespace) -> Dict[str, Any]:
             "exit": exit_result,
         }
         emit(result, args)
-        if locked and args.keep_lock and result_is_success(result):
-            hold_lock_until_interrupt(client, args)
         return result
     finally:
-        if locked and not args.keep_lock:
+        if locked:
             try:
                 client.unlock()
             finally:
@@ -287,6 +291,14 @@ def handle_dance_list(args: argparse.Namespace) -> Dict[str, Any]:
 
 def handle_dance_enter(args: argparse.Namespace) -> Dict[str, Any]:
     return request_once(args, "request_enter_dance_mode", {"mode": 1}, True, 10.0)
+
+
+def handle_action_stop(args: argparse.Namespace) -> Dict[str, Any]:
+    return request_once(args, "request_set_motion_engine", {"mode": 0}, True, 10.0)
+
+
+def handle_dance_stop(args: argparse.Namespace) -> Dict[str, Any]:
+    return request_once(args, "request_enter_dance_mode", {"mode": 0}, True, 10.0)
 
 
 def handle_dance_run(args: argparse.Namespace) -> Dict[str, Any]:
@@ -313,11 +325,11 @@ def handle_emoji_list(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 def handle_emoji_set(args: argparse.Namespace) -> Dict[str, Any]:
-    return request_once(args, "request_emoji_set", {"name": args.name}, True)
+    return request_once(args, "request_emoji_set", {"emoji_name": args.name}, True)
 
 
 def handle_emoji_set_default(args: argparse.Namespace) -> Dict[str, Any]:
-    return request_once(args, "request_emoji_set_default", {"name": args.name}, True)
+    return request_once(args, "request_emoji_set_default", {"emoji_name": args.name}, True)
 
 
 def handle_emoji_get_default(args: argparse.Namespace) -> Dict[str, Any]:
@@ -325,7 +337,7 @@ def handle_emoji_get_default(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 def handle_emoji_delete(args: argparse.Namespace) -> Dict[str, Any]:
-    return request_once(args, "request_emoji_delete", {"name": args.name}, True)
+    return request_once(args, "request_emoji_delete", {"emoji_name": args.name}, True)
 
 
 def handle_motion_walk(args: argparse.Namespace) -> Dict[str, Any]:
@@ -381,11 +393,9 @@ def handle_motion_walk(args: argparse.Namespace) -> Dict[str, Any]:
             "rate_hz": args.rate_hz,
         }
         emit(result, args)
-        if locked and args.keep_lock and result_is_success(result):
-            hold_lock_until_interrupt(client, args)
         return result
     finally:
-        if locked and not args.keep_lock:
+        if locked:
             try:
                 client.unlock()
             finally:
@@ -445,7 +455,7 @@ def handle_motion_standup(args: argparse.Namespace) -> Dict[str, Any]:
         emit(result, args)
         return result
     finally:
-        if locked and not args.keep_lock:
+        if locked:
             try:
                 client.unlock()
             finally:
@@ -536,7 +546,7 @@ def handle_motion_sit(args: argparse.Namespace) -> Dict[str, Any]:
         emit(result, args)
         return result
     finally:
-        if locked and not args.keep_lock:
+        if locked:
             try:
                 client.unlock()
             finally:
@@ -565,11 +575,9 @@ def request_once(
         locked = maybe_lock(client, args, mutating)
         result = client.request(title, data, timeout or args.timeout)
         emit(result, args)
-        if locked and args.keep_lock and result_is_success(result):
-            hold_lock_until_interrupt(client, args)
         return result
     finally:
-        if locked and not args.keep_lock:
+        if locked:
             try:
                 client.unlock()
             finally:
@@ -579,7 +587,7 @@ def request_once(
 
 
 def maybe_lock(client: SignalingClient, args: argparse.Namespace, mutating: bool) -> bool:
-    if not mutating or args.no_lock:
+    if not mutating or not args.lock:
         return False
     result = client.lock(identity(args))
     if not result_is_success(result):
@@ -629,18 +637,6 @@ def send_repeated_walk_velocity(
 
 def command_count(duration: float, rate_hz: float) -> int:
     return max(1, int(round(duration * rate_hz)))
-
-
-def hold_lock_until_interrupt(client: SignalingClient, args: argparse.Namespace) -> None:
-    print("lock: holding control connection; press Ctrl+C to release", file=sys.stderr)
-    try:
-        while True:
-            time.sleep(1.0)
-    except KeyboardInterrupt:
-        try:
-            client.unlock()
-        except SignalingError:
-            pass
 
 
 def make_client(args: argparse.Namespace) -> SignalingClient:

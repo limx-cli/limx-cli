@@ -1,6 +1,7 @@
 import io
 import json
 from pathlib import Path
+import tempfile
 import unittest
 import zipfile
 from unittest import mock
@@ -12,10 +13,15 @@ from agent_harness.scratch_bridge import (
     build_cli_args,
     extract_action_menu,
     extract_dance_menu,
+    extract_emoji_menu,
     normalize_work_mode,
     parse_cli_json,
     render_extension_js,
     robot_name_from_accid,
+    robot_project_dir,
+    robot_project_name,
+    robot_supports_emoji_blocks,
+    robot_supports_posture_blocks,
     sanitize_scratch_project,
 )
 
@@ -47,6 +53,20 @@ class ScratchBridgeTest(unittest.TestCase):
             argv,
         )
 
+    def test_dance_run_cli_accepts_underscore_rc_mapping(self):
+        from agent_harness.cli import build_parser
+
+        args = build_parser().parse_args([
+            "--host",
+            "127.0.0.1",
+            "dance",
+            "run",
+            "--rc_mapping",
+            "whatever",
+        ])
+
+        self.assertEqual("whatever", args.rc_mapping)
+
     def test_walk_builds_bounded_motion_cli(self):
         argv = build_cli_args(
             "walk",
@@ -66,14 +86,30 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertNotIn("--dry-run", argv)
         self.assertEqual(["dance", "list"], argv[-2:])
 
+        emoji_argv = build_cli_args("emoji_list", {}, self.config(dry_run=True))
+        self.assertNotIn("--dry-run", emoji_argv)
+        self.assertEqual(["emoji", "list"], emoji_argv[-2:])
+
     def test_action_mode_commands_are_exposed(self):
         self.assertEqual(
             ["--host", "127.0.0.1", "--port", "5000", "--dry-run", "action", "enter"],
             build_cli_args("action_enter", {}, self.config(dry_run=True)),
         )
         self.assertEqual(
+            ["--host", "127.0.0.1", "--port", "5000", "--dry-run", "action", "stop"],
+            build_cli_args("action_stop", {}, self.config(dry_run=True)),
+        )
+        self.assertEqual(
             ["--host", "127.0.0.1", "--port", "5000", "--dry-run", "dance", "enter"],
             build_cli_args("dance_mode", {}, self.config(dry_run=True)),
+        )
+        self.assertEqual(
+            ["--host", "127.0.0.1", "--port", "5000", "--dry-run", "dance", "stop"],
+            build_cli_args("dance_stop", {}, self.config(dry_run=True)),
+        )
+        self.assertEqual(
+            ["--host", "127.0.0.1", "--port", "5000", "--dry-run", "dance", "exit"],
+            build_cli_args("dance_exit", {}, self.config(dry_run=True)),
         )
         self.assertEqual(
             [
@@ -192,10 +228,21 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertEqual("Luna", robot_name_from_accid("HU_L_001"))
         self.assertEqual("LimX", robot_name_from_accid(""))
 
+    def test_hu_l_does_not_support_posture_blocks(self):
+        self.assertTrue(robot_supports_posture_blocks("HU_D_001"))
+        self.assertFalse(robot_supports_posture_blocks("HU_L_001"))
+        self.assertFalse(robot_supports_posture_blocks(" hu_l_001 "))
+
+    def test_hu_l_supports_emoji_blocks(self):
+        self.assertFalse(robot_supports_emoji_blocks("HU_D_001"))
+        self.assertTrue(robot_supports_emoji_blocks("HU_L_001"))
+        self.assertTrue(robot_supports_emoji_blocks(" hu_l_001 "))
+
     def test_motion_mode_commands_are_exposed(self):
         self.assertEqual(["motion", "prepare"], build_cli_args("prepare", {}, self.config())[-2:])
         self.assertEqual(["motion", "lie-down"], build_cli_args("lie_down", {}, self.config())[-2:])
         self.assertEqual(["motion", "zero-torque"], build_cli_args("zero_torque", {}, self.config())[-2:])
+        self.assertEqual(["emoji", "set", "screen-default"], build_cli_args("emoji_set", {"name": "screen-default"}, self.config())[-3:])
 
     def test_rejects_unknown_command(self):
         with self.assertRaises(ValueError):
@@ -217,6 +264,44 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertEqual("success", result["result"])
         self.assertEqual("/opt/limx/node/bin/node", popen.call_args.args[0][0])
 
+    def test_project_dir_is_split_by_robot_type(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = self.config()
+            config.project_dir = temp_dir
+            config.robot_accid = "HU_D_001"
+            oli_dir = robot_project_dir(config)
+
+            config.robot_accid = "HU_L_001"
+            luna_dir = robot_project_dir(config)
+
+        self.assertTrue(oli_dir.endswith("/Oli"))
+        self.assertTrue(luna_dir.endswith("/Luna"))
+        self.assertNotEqual(oli_dir, luna_dir)
+
+    def test_unknown_robot_uses_base_project_dir(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = self.config(dry_run=True)
+            config.project_dir = temp_dir
+
+            self.assertEqual("", robot_project_name(config))
+            self.assertEqual(temp_dir, robot_project_dir(config))
+
+            config.robot_accid = "HU_X_001"
+            self.assertEqual("", robot_project_name(config))
+            self.assertEqual(temp_dir, robot_project_dir(config))
+
+    def test_project_runner_uses_robot_specific_project_dir(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = self.config()
+            config.project_dir = temp_dir
+            config.robot_accid = "HU_L_001"
+            runner = ProjectRunner(config)
+
+            project_dir = runner.project_dir
+
+            self.assertEqual(str(Path(temp_dir) / "Luna"), project_dir)
+            self.assertTrue(Path(project_dir).is_dir())
+
     def test_project_runner_starts_one_main_program_stack(self):
         runner = Path(__file__).resolve().parents[1] / "agent_harness" / "scratch_runner.js"
         source = runner.read_text(encoding="utf-8")
@@ -227,23 +312,81 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertIn("vm.runtime._pushThread(program.id", source)
         self.assertNotIn("Starting orphan top-level block", source)
 
+    def test_project_start_and_stop_exit_action_or_dance_modes(self):
+        root = Path(__file__).resolve().parents[1]
+        bridge = (root / "agent_harness" / "scratch_bridge.py").read_text(encoding="utf-8")
+        cli = (root / "agent_harness" / "cli.py").read_text(encoding="utf-8")
+
+        self.assertIn('commands.add_parser("stop", help="Interrupt current action', cli)
+        self.assertIn('commands.add_parser("stop", help="Interrupt current dance', cli)
+        self.assertIn('client.request("request_set_motion_engine", {"mode": 0}', bridge)
+        self.assertIn('client.request("request_enter_dance_mode", {"mode": 0}', bridge)
+        self.assertNotIn("request_unlock_robot_control", bridge)
+        self.assertNotIn("client.lock(", bridge)
+        self.assertIn('"title": "request_enter_dance_mode"', bridge)
+        self.assertIn('path == "/project/stop-modes"', bridge)
+        self.assertIn("stop_modes_result = stop_action_dance_modes(config)", bridge)
+        self.assertIn('result["stop_modes"] = stop_modes_result', bridge)
+
     def test_editor_green_flag_runs_current_workspace_program(self):
         root = Path(__file__).resolve().parents[1]
         controls = (root / "scratch-app" / "src" / "containers" / "controls.jsx").read_text(encoding="utf-8")
         overlay = (root / "scratch-app" / "src" / "containers" / "green-flag-overlay.jsx").read_text(
             encoding="utf-8"
         )
+        blocks = (root / "scratch-app" / "src" / "containers" / "blocks.jsx").read_text(encoding="utf-8")
         runner = (root / "scratch-app" / "src" / "lib" / "limx-run-program.js").read_text(encoding="utf-8")
+        confirm = (root / "scratch-app" / "src" / "lib" / "limx-confirm.js").read_text(encoding="utf-8")
         bootstrap = (root / "scratch-app" / "static" / "static" / "bootstrap.js").read_text(encoding="utf-8")
 
         self.assertNotIn("vm.greenFlag()", controls)
         self.assertNotIn("vm.greenFlag()", overlay)
-        self.assertIn("runCurrentProgram(this.props.vm)", controls)
+        self.assertIn("await runCurrentProgram(this.props.vm)", controls)
         self.assertIn("runCurrentProgram(this.props.vm)", overlay)
+        self.assertIn("await runCurrentProgram(this.props.vm)", overlay)
         self.assertIn("toggleScript(blockId", runner)
+        self.assertIn("stopDanceAndActionModes", runner)
+        self.assertIn("/project/stop-modes", runner)
         self.assertIn("mainProgramBlock", runner)
         self.assertIn("MAIN_PROGRAM_RUN_INTERVAL_MS", runner)
         self.assertIn("No program blocks to run", runner)
+        self.assertIn("confirmRunProgram", runner)
+        self.assertIn("limxConfirm('确定要运行当前程序吗？')", runner)
+        self.assertIn("确定要运行当前程序吗？", runner)
+        self.assertIn("installRunGuards", runner)
+        self.assertIn("allowNextStackClickRun", runner)
+        self.assertIn("__limxStackClickRunGuarded", runner)
+        self.assertIn("__limxAllowStackClickRun", runner)
+        self.assertIn("__limxFlyoutStackClickGroupUntil", runner)
+        self.assertIn("__limxSkipNextBootstrapStackClickConfirm", runner)
+        self.assertIn("__limxAllowNextSourceStackClickRun", runner)
+        self.assertIn("handleWorkspaceBlockEvent", blocks)
+        self.assertIn("handleFlyoutBlockEvent", blocks)
+        self.assertIn("__limxFlyoutStackClickGroupUntil", blocks)
+        self.assertIn("installRunGuards(this.props.vm)", blocks)
+        self.assertIn("event.element === 'click'", blocks)
+        self.assertIn("this.flyoutWorkspace.addChangeListener(this.handleFlyoutBlockEvent)", blocks)
+        self.assertIn("this.props.vm.monitorBlockListener", blocks)
+        self.assertIn("确定要后台运行该项目吗？", bootstrap)
+        self.assertIn("limxConfirm", confirm)
+        self.assertIn("limx-confirm-overlay", confirm)
+        self.assertIn("var(--ui-modal-background", confirm)
+        self.assertIn("async function saveCurrentProject", bootstrap)
+        self.assertIn("async function handleProjectAction", bootstrap)
+        self.assertIn("await limxConfirm(bgMsg('确定要后台运行该项目吗？'", bootstrap)
+        self.assertIn("await limxConfirm(bgMsg('确定删除该项目？'", bootstrap)
+        self.assertIn("await limxConfirm(bgMsg('停止后台运行？'", bootstrap)
+        self.assertNotIn("confirm(", bootstrap)
+        self.assertIn("hookBlocklyStackClickBlocker", bootstrap)
+        self.assertIn("installStackClickRunGuard", bootstrap)
+        self.assertIn("__limxBlockStackClickBlockedUntil", bootstrap)
+        self.assertIn("isBlocklyFlyoutBlockArea", bootstrap)
+        self.assertIn("__limxFlyoutStackClickGroupUntil", bootstrap)
+        self.assertIn("__limxFlyoutStackClickAllowCount", bootstrap)
+        self.assertIn("__limxSkipNextBootstrapStackClickConfirm", bootstrap)
+        self.assertIn("__limxAllowNextSourceStackClickRun", bootstrap)
+        self.assertIn("runtime.toggleScript", bootstrap)
+        self.assertIn("postJson('/project/stop-modes'", bootstrap)
         self.assertNotIn("startBrowserTopLevelScripts", bootstrap)
         self.assertNotIn("_pushThread", bootstrap)
         self.assertNotIn("isGreenFlagControl", bootstrap)
@@ -332,8 +475,10 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertNotIn("位姿", SCRATCH_EXTENSION_JS)
         self.assertIn("actionNames", SCRATCH_EXTENSION_JS)
         self.assertIn("danceMappings", SCRATCH_EXTENSION_JS)
+        self.assertIn("emojiNames", SCRATCH_EXTENSION_JS)
         self.assertIn("items: this.actionMenu", SCRATCH_EXTENSION_JS)
         self.assertIn("items: this.danceMenu", SCRATCH_EXTENSION_JS)
+        self.assertIn("items: this.emojiMenu", SCRATCH_EXTENSION_JS)
         self.assertNotIn("items: 'getActionMenu'", SCRATCH_EXTENSION_JS)
         self.assertNotIn("items: 'getDanceMenu'", SCRATCH_EXTENSION_JS)
         self.assertNotIn("this.getActionMenu.bind(this)", SCRATCH_EXTENSION_JS)
@@ -349,6 +494,10 @@ class ScratchBridgeTest(unittest.TestCase):
             {"value": "solo_shake", "zh": "孤身摇", "en": "Solo shake"},
             {"value": "happy_dance", "zh": "开心舞", "en": "Happy dance"},
         ]
+        config.emoji_menu = [
+            {"value": "screen-default", "zh": "screen-default", "en": "screen-default"},
+            {"value": "voice-listen", "zh": "voice-listen", "en": "voice-listen"},
+        ]
 
         js = render_extension_js(config)
 
@@ -356,11 +505,18 @@ class ScratchBridgeTest(unittest.TestCase):
         self.assertIn('"zh": "挥手告别"', js)
         self.assertIn('"value": "solo_shake"', js)
         self.assertIn('"en": "Solo shake"', js)
+        self.assertIn('"value": "screen-default"', js)
         self.assertNotIn("__LIMX_ACTION_MENU__", js)
         self.assertNotIn("__LIMX_DANCE_MENU__", js)
+        self.assertNotIn("__LIMX_EMOJI_MENU__", js)
         self.assertNotIn("__LIMX_ROBOT_NAME__", js)
         self.assertNotIn("__LIMX_LANG__", js)
+        self.assertNotIn("__LIMX_SUPPORTS_POSTURE_BLOCKS__", js)
+        self.assertNotIn("__LIMX_SUPPORTS_EMOJI_BLOCKS__", js)
         self.assertIn('const __INITIAL_LANG__ = "";', js)
+        self.assertIn("const supportsPostureBlocks = true;", js)
+        self.assertIn("const supportsEmojiBlocks = false;", js)
+        self.assertIn("function emojiBlocks()", js)
 
         en_js = render_extension_js(config, "en")
         self.assertIn('const __INITIAL_LANG__ = "en";', en_js)
@@ -369,6 +525,12 @@ class ScratchBridgeTest(unittest.TestCase):
         luna_js = render_extension_js(config)
         self.assertIn('const robotName = "Luna";', luna_js)
         self.assertIn("name: robotName + ' Robot'", luna_js)
+
+        config.robot_accid = "HU_L_001"
+        luna_js = render_extension_js(config)
+        self.assertIn("const supportsPostureBlocks = false;", luna_js)
+        self.assertIn("const supportsEmojiBlocks = true;", luna_js)
+        self.assertIn("切换表情 [NAME]", luna_js)
 
     def test_extract_startup_menus(self):
         self.assertEqual(
@@ -396,6 +558,22 @@ class ScratchBridgeTest(unittest.TestCase):
                         {"rc_mapping": "solo_shake"},
                         {"id": "happy"},
                         {"rc_mapping": "solo_shake"},
+                    ]
+                }
+            ),
+        )
+        self.assertEqual(
+            [
+                {"value": "screen-default", "zh": "screen-default", "en": "screen-default"},
+                {"value": "voice-listen", "zh": "voice-listen", "en": "voice-listen"},
+            ],
+            extract_emoji_menu(
+                {
+                    "emoji_list": [
+                        "screen-default",
+                        "",
+                        "voice-listen",
+                        "screen-default",
                     ]
                 }
             ),

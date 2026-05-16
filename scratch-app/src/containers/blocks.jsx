@@ -21,6 +21,7 @@ import DragConstants from '../lib/drag-constants';
 import defineDynamicBlock from '../lib/define-dynamic-block';
 import {Theme} from '../lib/themes';
 import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
+import {installRunGuards} from '../lib/limx-run-program';
 
 import {connect} from 'react-redux';
 import {updateToolbox} from '../reducers/toolbox';
@@ -118,8 +119,11 @@ class Blocks extends React.Component {
             'handleBlocksInfoUpdate',
             'onTargetsUpdate',
             'onVisualReport',
+            'handleWorkspaceBlockEvent',
+            'handleFlyoutBlockEvent',
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
+            'resetInitialFlyoutScroll',
             'setBlocks',
             'setLocale',
             'handleEnableProcedureReturns'
@@ -133,12 +137,33 @@ class Blocks extends React.Component {
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
+        this.initialFlyoutScrollResetUntil = Date.now() + 5000;
+    }
+    handleWorkspaceBlockEvent (event) {
+        if (event && event.type === 'ui' && event.element === 'click') {
+            return;
+        }
+        this.props.vm.blockListener(event);
+    }
+    handleFlyoutBlockEvent (event) {
+        if (event && event.type === 'ui' && event.element === 'click') {
+            const now = Date.now();
+            if (this.props.vm && this.props.vm.runtime) {
+                if (now > (this.props.vm.runtime.__limxFlyoutStackClickGroupUntil || 0)) {
+                    this.props.vm.runtime.__limxFlyoutStackClickConfirmAt = 0;
+                }
+                this.props.vm.runtime.__limxFlyoutStackClickGroupUntil = now + 700;
+            }
+        }
+        this.props.vm.flyoutBlockListener(event);
     }
     componentDidMount () {
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
+
+        installRunGuards(this.props.vm);
 
         this.ScratchBlocks.FieldColourSlider.activateEyedropper_ = this.props.onActivateColorPicker;
         this.ScratchBlocks.Procedures.externalProcedureDefCallback = this.props.onActivateCustomProcedures;
@@ -227,6 +252,10 @@ class Blocks extends React.Component {
         for (const category of this.props.vm.runtime._blockInfo) {
             this.handleExtensionAdded(category);
         }
+
+        [0, 80, 200, 500, 1000, 2000].forEach(delay => {
+            setTimeout(this.resetInitialFlyoutScroll, delay);
+        });
 
         gentlyRequestPersistentStorage();
     }
@@ -335,10 +364,28 @@ class Blocks extends React.Component {
         } else {
             this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos);
         }
+        this.resetInitialFlyoutScroll();
 
         const queue = this.toolboxUpdateQueue;
         this.toolboxUpdateQueue = [];
         queue.forEach(fn => fn());
+    }
+
+    resetInitialFlyoutScroll () {
+        if (!this.workspace || Date.now() > this.initialFlyoutScrollResetUntil) return;
+        const toolbox = this.workspace.toolbox_;
+        if (!toolbox || typeof toolbox.getSelectedCategoryId !== 'function') return;
+
+        const categoryId = toolbox.getSelectedCategoryId();
+        const categoryPos = toolbox.getCategoryPositionById(categoryId);
+        if (Number.isFinite(categoryPos) && typeof toolbox.setFlyoutScrollPos === 'function') {
+            toolbox.setFlyoutScrollPos(categoryPos);
+        }
+
+        const flyout = this.workspace.getFlyout && this.workspace.getFlyout();
+        if (flyout && flyout.workspace_) {
+            flyout.workspace_.scrollY = 0;
+        }
     }
 
     withToolboxUpdates (fn) {
@@ -351,11 +398,11 @@ class Blocks extends React.Component {
     }
 
     attachVM () {
-        this.workspace.addChangeListener(this.props.vm.blockListener);
+        this.workspace.addChangeListener(this.handleWorkspaceBlockEvent);
         this.flyoutWorkspace = this.workspace
             .getFlyout()
             .getWorkspace();
-        this.flyoutWorkspace.addChangeListener(this.props.vm.flyoutBlockListener);
+        this.flyoutWorkspace.addChangeListener(this.handleFlyoutBlockEvent);
         this.flyoutWorkspace.addChangeListener(this.props.vm.monitorBlockListener);
         this.props.vm.addListener('SCRIPT_GLOW_ON', this.onScriptGlowOn);
         this.props.vm.addListener('SCRIPT_GLOW_OFF', this.onScriptGlowOff);
@@ -474,7 +521,7 @@ class Blocks extends React.Component {
         }
 
         // Remove and reattach the workspace listener (but allow flyout events)
-        this.workspace.removeChangeListener(this.props.vm.blockListener);
+        this.workspace.removeChangeListener(this.handleWorkspaceBlockEvent);
         const dom = this.ScratchBlocks.Xml.textToDom(data.xml);
         try {
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
@@ -493,7 +540,7 @@ class Blocks extends React.Component {
             }
             log.error(error);
         }
-        this.workspace.addChangeListener(this.props.vm.blockListener);
+        this.workspace.addChangeListener(this.handleWorkspaceBlockEvent);
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
             const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
@@ -507,6 +554,7 @@ class Blocks extends React.Component {
         // fresh workspace and we don't want any changes made to another sprites
         // workspace to be 'undone' here.
         this.workspace.clearUndo();
+        this.resetInitialFlyoutScroll();
     }
     handleMonitorsUpdate (monitors) {
         // Update the checkboxes of the relevant monitors.

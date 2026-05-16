@@ -2,12 +2,15 @@ import io
 import json
 import unittest
 from contextlib import redirect_stdout
+from unittest import mock
 
 from agent_harness.cli import (
     action_library_is_running,
     build_parser,
     command_count,
     main,
+    maybe_lock,
+    request_once,
     seated_state_is_ready,
     sit_result_is_success,
     standing_state_is_ready,
@@ -119,6 +122,14 @@ class CliTest(unittest.TestCase):
         self.assertEqual("request_action_sync", data["requests"][0]["title"])
         self.assertEqual({"name": "wave_greet_bye"}, data["requests"][0]["data"])
 
+    def test_emoji_set_uses_protocol_emoji_name(self):
+        code, output = self.run_cli(["--dry-run", "emoji", "set", "screen-default"])
+
+        self.assertEqual(0, code)
+        data = json.loads(output)
+        self.assertEqual("request_emoji_set", data["requests"][0]["title"])
+        self.assertEqual({"emoji_name": "screen-default"}, data["requests"][0]["data"])
+
     def test_lock_dry_run_prints_identity(self):
         code, output = self.run_cli(
             ["--dry-run", "--user", "agent", "--device", "cursor", "lock", "acquire"]
@@ -128,6 +139,122 @@ class CliTest(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual("request_lock_robot_control", data["requests"][0]["title"])
         self.assertEqual("cursor", data["requests"][0]["data"]["device_id"])
+
+    def test_mutating_commands_do_not_lock_by_default(self):
+        class FakeClient:
+            def __init__(self):
+                self.lock_calls = 0
+
+            def lock(self, _identity):
+                self.lock_calls += 1
+                return {"result": "success"}
+
+        client = FakeClient()
+        args = build_parser().parse_args(["motion", "walk"])
+
+        self.assertFalse(maybe_lock(client, args, mutating=True))
+        self.assertEqual(0, client.lock_calls)
+
+    def test_lock_flag_opt_in_acquires_control(self):
+        class FakeClient:
+            def __init__(self):
+                self.lock_calls = 0
+
+            def lock(self, _identity):
+                self.lock_calls += 1
+                return {"result": "success"}
+
+        client = FakeClient()
+        args = build_parser().parse_args(["--lock", "motion", "walk"])
+
+        self.assertTrue(maybe_lock(client, args, mutating=True))
+        self.assertEqual(1, client.lock_calls)
+
+    def test_raw_lock_flag_still_works_after_subcommand(self):
+        args = build_parser().parse_args(["raw", "request_audio_play_file", "--data", "{}", "--lock"])
+
+        self.assertTrue(args.lock)
+
+    def test_no_lock_flag_is_not_supported(self):
+        parser = build_parser()
+
+        with self.assertRaises(SystemExit) as context:
+            parser.parse_args(["--no-lock", "motion", "walk"])
+
+        self.assertEqual(2, context.exception.code)
+
+    def test_keep_lock_flag_is_not_supported(self):
+        parser = build_parser()
+
+        with self.assertRaises(SystemExit) as context:
+            parser.parse_args(["--keep-lock", "motion", "walk"])
+
+        self.assertEqual(2, context.exception.code)
+
+    def test_locked_request_releases_lock_after_success(self):
+        class FakeClient:
+            def __init__(self):
+                self.unlock_calls = 0
+                self.close_calls = 0
+
+            def connect(self):
+                pass
+
+            def lock(self, _identity):
+                return {"result": "success"}
+
+            def request(self, _title, _data, _timeout):
+                return {"result": "success"}
+
+            def unlock(self):
+                self.unlock_calls += 1
+                return {"result": "success"}
+
+            def close(self):
+                self.close_calls += 1
+
+        client = FakeClient()
+        args = build_parser().parse_args(["--lock", "raw", "request_audio_play_file", "--data", "{}"])
+
+        with mock.patch("agent_harness.cli.make_client", return_value=client):
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                request_once(args, "request_audio_play_file", {}, True)
+
+        self.assertEqual(1, client.unlock_calls)
+        self.assertEqual(1, client.close_calls)
+
+    def test_locked_request_releases_lock_after_exception(self):
+        class FakeClient:
+            def __init__(self):
+                self.unlock_calls = 0
+                self.close_calls = 0
+
+            def connect(self):
+                pass
+
+            def lock(self, _identity):
+                return {"result": "success"}
+
+            def request(self, _title, _data, _timeout):
+                raise RuntimeError("boom")
+
+            def unlock(self):
+                self.unlock_calls += 1
+                return {"result": "success"}
+
+            def close(self):
+                self.close_calls += 1
+
+        client = FakeClient()
+        args = build_parser().parse_args(["--lock", "raw", "request_audio_play_file", "--data", "{}"])
+
+        with mock.patch("agent_harness.cli.make_client", return_value=client):
+            with self.assertRaises(RuntimeError):
+                request_once(args, "request_audio_play_file", {}, True)
+
+        self.assertEqual(1, client.unlock_calls)
+        self.assertEqual(1, client.close_calls)
 
     def test_invalid_raw_data_returns_error(self):
         code, _output = self.run_cli(["--dry-run", "raw", "request_get_joint_state", "--data", "[]"])

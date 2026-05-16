@@ -18,17 +18,17 @@ Environment variables:
 
 - `LIMX_ROBOT_HOST`: default robot IP.
 - `LIMX_ROBOT_PORT`: default WebSocket port.
-- `LIMX_ROBOT_USER`, `LIMX_ROBOT_USER_ID`, `LIMX_ROBOT_DEVICE_ID`: lock identity.
+- `LIMX_ROBOT_USER`, `LIMX_ROBOT_USER_ID`, `LIMX_ROBOT_DEVICE_ID`: identity used when `--lock` is requested.
 
 ## Important Rules
 
 - CLI output is JSON by default for agent workflows.
 - Run `--dry-run` before any motion, dance, action, audio playback, or emoji mutation.
-- Mutating commands acquire `request_lock_robot_control` automatically unless
-  `--no-lock` is passed.
-- `--keep-lock` intentionally keeps the CLI process running so the WebSocket
-  owner connection stays alive; press Ctrl+C to release.
-- Do not use `--no-lock` when multiple clients may control the robot.
+- Mutating commands do not acquire `request_lock_robot_control` by default.
+- Add global `--lock` before the command only when the user explicitly asks to
+  own robot control for that operation, for example `limx-cli --lock motion walk ...`.
+- When `--lock` is used, the CLI releases the control lock after the command
+  finishes or raises an error.
 - For movement, always use bounded commands such as `motion walk --duration`.
   Walking is step-based, so the CLI refreshes velocity at `--rate-hz` while the
   duration is active.
@@ -126,8 +126,8 @@ Use raw only when a command group does not yet expose the required request:
 
 ```bash
 limx-cli raw request_get_joint_state --data '{}'
-limx-cli raw request_audio_play_file --data '{"path":"/path/on/robot.wav"}' --lock
+limx-cli --lock raw request_audio_play_file --data '{"path":"/path/on/robot.wav"}'
 ```
 
-Raw requests are treated as mutating unless the title is in the CLI read-only
-allowlist. Add `--lock` to force control acquisition.
+Raw requests are sent without a control lock by default. Add global `--lock` to
+acquire robot control for a raw request.

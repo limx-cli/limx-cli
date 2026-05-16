@@ -327,9 +327,95 @@
       '.limx-project-readonly .blocklyFlyout,',
       '.limx-project-readonly .blocklyFlyout * {',
       '  cursor: not-allowed !important;',
+      '}',
+      '.limx-confirm-overlay {',
+      '  position: fixed;',
+      '  inset: 0;',
+      '  z-index: 100000;',
+      '  display: flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      '  background: var(--ui-modal-overlay, rgba(15,23,42,0.36));',
+      '}',
+      '.limx-confirm-dialog {',
+      '  width: min(360px, calc(100vw - 40px));',
+      '  overflow: hidden;',
+      '  border: 1px solid var(--ui-black-transparent, rgba(0,0,0,0.12));',
+      '  border-radius: 16px;',
+      '  background: var(--ui-modal-background, #fff);',
+      '  color: var(--ui-modal-foreground, #0f172a);',
+      '  box-shadow: 0 18px 50px rgba(0,0,0,0.28);',
+      '  font-family: inherit;',
+      '}',
+      '.limx-confirm-title {',
+      '  padding: 14px 18px;',
+      '  background: var(--ui-modal-header-background, #ff6600);',
+      '  color: var(--ui-modal-header-foreground, #fff);',
+      '  font-weight: 700;',
+      '}',
+      '.limx-confirm-message {',
+      '  padding: 20px 18px;',
+      '  font-size: 15px;',
+      '  line-height: 1.5;',
+      '}',
+      '.limx-confirm-actions {',
+      '  display: flex;',
+      '  justify-content: flex-end;',
+      '  gap: 10px;',
+      '  padding: 0 18px 16px;',
+      '}',
+      '.limx-confirm-actions button {',
+      '  min-width: 76px;',
+      '  border: 1px solid var(--ui-black-transparent, rgba(0,0,0,0.16));',
+      '  border-radius: 8px;',
+      '  padding: 8px 14px;',
+      '  cursor: pointer;',
+      '  font: inherit;',
+      '}',
+      '.limx-confirm-cancel {',
+      '  background: var(--ui-white, #fff);',
+      '  color: var(--ui-modal-foreground, #0f172a);',
+      '}',
+      '.limx-confirm-ok {',
+      '  border-color: transparent;',
+      '  background: var(--motion-primary, #4c97ff);',
+      '  color: #fff;',
       '}'
     ].join('\n');
     document.head.appendChild(style);
+  }
+
+  function limxConfirm(message) {
+    injectStyles();
+    return new Promise(function (resolve) {
+      var overlay = document.createElement('div');
+      overlay.className = 'limx-confirm-overlay';
+      overlay.innerHTML = [
+        '<div class="limx-confirm-dialog" role="dialog" aria-modal="true">',
+        '  <div class="limx-confirm-title">' + bgMsg('确认操作', 'Confirm') + '</div>',
+        '  <div class="limx-confirm-message"></div>',
+        '  <div class="limx-confirm-actions">',
+        '    <button type="button" class="limx-confirm-cancel">' + bgMsg('取消', 'Cancel') + '</button>',
+        '    <button type="button" class="limx-confirm-ok">' + bgMsg('确定', 'OK') + '</button>',
+        '  </div>',
+        '</div>'
+      ].join('');
+      overlay.querySelector('.limx-confirm-message').textContent = message;
+      var close = function (result) {
+        overlay.remove();
+        resolve(result);
+      };
+      overlay.querySelector('.limx-confirm-cancel').addEventListener('click', function () { close(false); });
+      overlay.querySelector('.limx-confirm-ok').addEventListener('click', function () { close(true); });
+      overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) close(false);
+      });
+      overlay.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') close(false);
+      });
+      document.body.appendChild(overlay);
+      overlay.querySelector('.limx-confirm-ok').focus();
+    });
   }
 
   function titleFor(robotName, accid) {
@@ -493,6 +579,14 @@
     var flyout = workspace && workspace.getFlyout && workspace.getFlyout();
     if (!flyout) return false;
     try {
+      var toolbox = workspace && workspace.toolbox_;
+      if (toolbox &&
+          typeof toolbox.getSelectedCategoryId === 'function' &&
+          typeof toolbox.getCategoryPositionById === 'function' &&
+          typeof toolbox.setFlyoutScrollPos === 'function') {
+        var categoryPos = toolbox.getCategoryPositionById(toolbox.getSelectedCategoryId());
+        if (Number.isFinite(categoryPos)) toolbox.setFlyoutScrollPos(categoryPos);
+      }
       if (typeof flyout.scrollToStart === 'function') flyout.scrollToStart();
       if (typeof flyout.setScrollPos === 'function') flyout.setScrollPos(0);
       if (flyout.scrollbar_ && typeof flyout.scrollbar_.set === 'function') flyout.scrollbar_.set(0);
@@ -705,10 +799,10 @@
     ));
   }
 
-  function saveCurrentProject() {
+  async function saveCurrentProject() {
     var vm = getVM();
     if (!vm || !currentProjectName || bgSyncing || !projectDirty || saveInFlight) return;
-    if (!confirm(bgMsg('确认保存当前修改到后台项目文件？', 'Save project changes?'))) {
+    if (!await limxConfirm(bgMsg('确认保存当前修改到后台项目文件？', 'Save project changes?'))) {
       return;
     }
     saveInFlight = true;
@@ -970,7 +1064,7 @@
       });
   }
 
-  function handleProjectAction(action) {
+  async function handleProjectAction(action) {
     if (action === 'create') {
       if (hasUnsavedCurrentProject()) {
         alert(bgMsg('当前项目有未保存修改，请先保存。', 'Save current changes first.'));
@@ -995,6 +1089,7 @@
       return;
     }
     if (action === 'run') {
+      if (!await limxConfirm(bgMsg('确定要后台运行该项目吗？', 'Run this project in the background?'))) return;
       postJson('/project/stop', {}).then(function () {
         return new Promise(function (resolve) { setTimeout(resolve, 300); });
       }).then(function () {
@@ -1034,7 +1129,7 @@
         updateProjectButtons();
         return;
       }
-      if (!confirm(bgMsg('确定删除该项目？', 'Delete this project?'))) return;
+      if (!await limxConfirm(bgMsg('确定删除该项目？', 'Delete this project?'))) return;
       var remainingProjects = projectsCache
         .map(function (p) { return p.name; })
         .filter(function (projectName) { return projectName !== name; });
@@ -1170,8 +1265,8 @@
         var pulseStyle = document.createElement('style');
         pulseStyle.textContent = '@keyframes limxBgPulse{0%,100%{opacity:1}50%{opacity:0.3}}';
         document.head.appendChild(pulseStyle);
-        el.addEventListener('click', function () {
-          if (confirm(bgMsg('停止后台运行？', 'Stop background execution?'))) {
+        el.addEventListener('click', async function () {
+          if (await limxConfirm(bgMsg('停止后台运行？', 'Stop background execution?'))) {
             bgStop();
           }
         });
@@ -1240,12 +1335,94 @@
     });
   }
 
+  function isBlocklyFlyoutBlockArea(node) {
+    return Boolean(node && node.closest && node.closest('.blocklyFlyout'));
+  }
+
+  function isBlocklyWorkspaceBlockArea(node) {
+    return Boolean(node && node.closest && (
+      node.closest('.blocklyBlockCanvas') ||
+      node.closest('.blocklyDraggable')
+    ) && !node.closest('.blocklyFlyout'));
+  }
+
+  function hookBlocklyStackClickBlocker() {
+    if (document.__limxBlocklyStackClickBlockerHooked) return;
+    document.__limxBlocklyStackClickBlockerHooked = true;
+    ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(function (eventName) {
+      document.addEventListener(eventName, function (event) {
+        var now = Date.now();
+        if (isBlocklyFlyoutBlockArea(event.target)) {
+          if (now > (window.__limxFlyoutStackClickGroupUntil || 0)) {
+            window.__limxFlyoutStackClickConfirmAt = 0;
+            window.__limxFlyoutStackClickAllowCount = 0;
+          }
+          window.__limxFlyoutStackClickGroupUntil = now + 700;
+        } else if (isBlocklyWorkspaceBlockArea(event.target)) {
+          window.__limxBlockStackClickBlockedUntil = now + 500;
+        }
+      }, true);
+    });
+  }
+
+  function installStackClickRunGuard(vm) {
+    var runtime = vm && vm.runtime;
+    if (!runtime || runtime.__limxBootstrapStackClickRunGuarded || typeof runtime.toggleScript !== 'function') return;
+    var toggleScript = runtime.toggleScript.bind(runtime);
+    runtime.toggleScript = function () {
+      var options = arguments[1];
+      if (options && options.stackClick) {
+        if (window.__limxSkipNextBootstrapStackClickConfirm) {
+          window.__limxSkipNextBootstrapStackClickConfirm = false;
+          return toggleScript.apply(runtime, arguments);
+        }
+        var now = Date.now();
+        if (now < (window.__limxFlyoutStackClickGroupUntil || 0)) {
+          if (now - (window.__limxFlyoutStackClickConfirmAt || 0) > 500) {
+            window.__limxFlyoutStackClickConfirmAt = now;
+            window.__limxFlyoutStackClickAllowCount = 0;
+            var toggleArgs = Array.prototype.slice.call(arguments);
+            limxConfirm(bgMsg('确定要运行当前程序吗？', 'Run this program?')).then(function (confirmed) {
+              if (confirmed) {
+                window.__limxAllowNextSourceStackClickRun = true;
+                postJson('/project/stop-modes', {}).then(function () {
+                  toggleScript.apply(runtime, toggleArgs);
+                }).catch(function () {
+                  toggleScript.apply(runtime, toggleArgs);
+                });
+              }
+            }.bind(this));
+            return;
+          }
+          if (window.__limxFlyoutStackClickAllowCount > 0) {
+            window.__limxFlyoutStackClickAllowCount -= 1;
+          } else {
+            return;
+          }
+        } else if (Date.now() < (window.__limxBlockStackClickBlockedUntil || 0)) {
+          return;
+        }
+        var stackClickArgs = Array.prototype.slice.call(arguments);
+        postJson('/project/stop-modes', {}).then(function () {
+          toggleScript.apply(runtime, stackClickArgs);
+        }).catch(function () {
+          toggleScript.apply(runtime, stackClickArgs);
+        });
+        return;
+      }
+      return toggleScript.apply(runtime, arguments);
+    };
+    runtime.__limxBootstrapStackClickRunGuarded = true;
+  }
+
   function hookVM() {
     if (bgRunnerHooked) return;
     var vm = getVM();
     if (!vm || !vm.runtime) return;
     bgRunnerHooked = true;
     console.log('[bootstrap] VM hooked; browser green flag runs locally');
+    hookBlocklyStackClickBlocker();
+    installStackClickRunGuard(vm);
     vm.on('PROJECT_CHANGED', markProjectDirty);
     if (!vm.__limxGreenFlagPatched && typeof vm.greenFlag === 'function') {
       var origGF = vm.greenFlag.bind(vm);
