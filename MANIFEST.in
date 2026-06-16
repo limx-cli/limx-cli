@@ -1,2 +1,2 @@
-recursive-include agent_harness *.js
-recursive-include agent_harness/vendor *
+recursive-include limx-cli *.js
+recursive-include limx-cli/vendor *

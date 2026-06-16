@@ -1,9 +1,9 @@
 ---
-name: limx-agent-harness
+name: limx-cli
 description: Control LimX robot skills through the signaling WebSocket request API using the limx-cli.
 ---
 
-# LimX Agent Harness Skill
+# LimX CLI Skill
 
 Use `limx-cli` when you need to inspect or operate an LimX robot through the running
 `signaling` WebSocket service.

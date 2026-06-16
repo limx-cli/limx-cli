@@ -1,13 +1,13 @@
-# LimX Agent Harness
+# LimX CLI
 
 English | [中文](README_cn.md)
 
-LimX Agent Harness is a skill control and orchestration layer built on top of the LimX robot WebSocket API. It wraps the robot's `request_*` control interfaces into two easier-to-use entry points:
+LimX CLI is a skill control and orchestration layer built on top of the LimX robot WebSocket API. It wraps the robot's `request_*` control interfaces into two easier-to-use entry points:
 
 - `limx-cli`: a command-line tool for AI Agents, automation scripts, and developers.
 - `limx-scratch`: a local service for Scratch visual programming, with the built-in `LimX Robot` block extension.
 
-![LimX Agent Harness Software Architecture](docs/agent-harness-architecture.svg)
+![LimX CLI Software Architecture](docs/limx-cli-architecture.svg)
 
 ## 1. Features
 
@@ -70,7 +70,7 @@ python3 -m pip install pytest
 Build with CMake:
 
 ```bash
-cd agent-harness
+cd limx-cli
 cmake -S . -B build
 cmake --build build
 ```
@@ -85,7 +85,7 @@ After installation:
 
 - `limx-cli` is installed to `install/bin/limx-cli`.
 - `limx-scratch` is installed to `install/bin/limx-scratch`.
-- Other runtime resources are installed to `install/bin/agent-harness/`.
+- Other runtime resources are installed to `install/bin/limx-cli/`.
 
 Use the local installation directory:
 
@@ -106,7 +106,7 @@ After system installation:
 
 - `limx-cli` is installed to `/usr/local/bin/limx-cli`.
 - `limx-scratch` is installed to `/usr/local/bin/limx-scratch`.
-- Other runtime resources are installed to `/usr/local/bin/agent-harness/`.
+- Other runtime resources are installed to `/usr/local/bin/limx-cli/`.
 
 ## 5. Quick Start
 
@@ -174,7 +174,7 @@ Usage:
 limx-cli --help
 ```
 
-2. Add `agent-harness/SKILL.md` to the skill directory of the corresponding tool, or reference this file in the tool configuration.
+2. Add `limx-cli/SKILL.md` to the skill directory of the corresponding tool, or reference this file in the tool configuration.
 
 Common locations:
 
@@ -182,7 +182,7 @@ Common locations:
 | --- | --- |
 | OpenClaw / ZeroClaw | Place `SKILL.md` in the project or workspace skills directory and let the Agent load it |
 | Cursor | Place `SKILL.md` in a Cursor-discoverable skill directory, or open it with the project so the Agent can read it |
-| Claude Code | Copy it to `~/.claude/skills/limx-agent-harness/SKILL.md` |
+| Claude Code | Copy it to `~/.claude/skills/limx-cli/SKILL.md` |
 
 3. Set robot connection environment variables:
 
@@ -251,7 +251,7 @@ limx-scratch --dry-run
 Run unit tests:
 
 ```bash
-cd agent-harness
+cd limx-cli
 python3 -m pytest tests/ -q
 ```
 
@@ -273,10 +273,10 @@ limx-cli --dry-run motion walk --x 0.05 --duration 1
 
 ## 8. Open Source Notes
 
-LimX Agent Harness provides an easier and more composable entry point for robot skills: AI Agents can call it, developers can script it, and users can build behaviors with blocks.
+LimX CLI provides an easier and more composable entry point for robot skills: AI Agents can call it, developers can script it, and users can build behaviors with blocks.
 
 License notes:
 
-- Except for third-party components, the self-developed parts of LimX Agent Harness are licensed under the Apache License 2.0.
+- Except for third-party components, the self-developed parts of LimX CLI are licensed under the Apache License 2.0.
 - `scratch-app` is based on Scratch GUI and retains its original GPL-3.0 license notices and copyright information.
 - If a release includes `scratch-app` or Scratch pages built from it, the distribution must also comply with GPL-3.0 requirements.

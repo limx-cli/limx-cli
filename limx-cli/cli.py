@@ -62,7 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lock", action="store_true", help="Acquire robot control for mutating commands")
     parser.add_argument("--user", default=env_default("USER", "agent"))
     parser.add_argument("--user-id", default=env_default("USER_ID", "agent"))
-    parser.add_argument("--device-id", "--device", default=env_default("DEVICE_ID", "limx-agent-harness"))
+    parser.add_argument("--device-id", "--device", default=env_default("DEVICE_ID", "limx-cli"))
 
     subparsers = parser.add_subparsers(dest="group")
     add_raw_commands(subparsers)

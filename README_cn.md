@@ -1,13 +1,13 @@
-# LimX Agent Harness
+# LimX CLI
 
 [English](README.md) | 中文
 
-LimX Agent Harness 是运行在 LimX 机器人 WebSocket API 之上的技能控制与编排层。它把机器人复杂的 `request_*` 控制接口封装成两类更容易使用的入口：
+LimX CLI 是运行在 LimX 机器人 WebSocket API 之上的技能控制与编排层。它把机器人复杂的 `request_*` 控制接口封装成两类更容易使用的入口：
 
 - `limx-cli`：面向 AI Agent、自动化脚本和开发者的命令行工具。
 - `limx-scratch`：面向 Scratch 图形化编程的本地服务，内置 `LimX Robot` 积木扩展。
 
-![LimX Agent Harness 软件架构](docs/agent-harness-architecture.svg)
+![LimX CLI 软件架构](docs/limx-cli-architecture.svg)
 
 ## 1. 特性
 
@@ -70,7 +70,7 @@ python3 -m pip install pytest
 通过 CMake 编译安装：
 
 ```bash
-cd agent-harness
+cd limx-cli
 cmake -S . -B build
 cmake --build build
 ```
@@ -85,7 +85,7 @@ cmake --install build --prefix install
 
 - `limx-cli` 位于 `install/bin/limx-cli`。
 - `limx-scratch` 位于 `install/bin/limx-scratch`。
-- 其它运行时资源位于 `install/bin/agent-harness/`。
+- 其它运行时资源位于 `install/bin/limx-cli/`。
 
 使用本地安装目录：
 
@@ -106,7 +106,7 @@ sudo cmake --install build --prefix /usr/local
 
 - `limx-cli` 位于 `/usr/local/bin/limx-cli`。
 - `limx-scratch` 位于 `/usr/local/bin/limx-scratch`。
-- 其它运行时资源位于 `/usr/local/bin/agent-harness/`。
+- 其它运行时资源位于 `/usr/local/bin/limx-cli/`。
 
 ## 5. 快速使用
 
@@ -174,7 +174,7 @@ limx-cli --dry-run motion walk --x 0.1 --duration 3
 limx-cli --help
 ```
 
-2. 将 `agent-harness/SKILL.md` 添加到对应工具的 skill 目录，或在工具配置中引用这个文件。
+2. 将 `limx-cli/SKILL.md` 添加到对应工具的 skill 目录，或在工具配置中引用这个文件。
 
 常见放置方式：
 
@@ -182,7 +182,7 @@ limx-cli --help
 | --- | --- |
 | OpenClaw / ZeroClaw | 将 `SKILL.md` 放入项目或工作区的 skills 目录，并让 Agent 加载该 skill |
 | Cursor | 将 `SKILL.md` 放入 Cursor 可发现的 skill 目录，或随项目一起打开后让 Agent 读取 |
-| Claude Code | 可复制到 `~/.claude/skills/limx-agent-harness/SKILL.md` |
+| Claude Code | 可复制到 `~/.claude/skills/limx-cli/SKILL.md` |
 
 3. 设置机器人连接环境变量：
 
@@ -251,7 +251,7 @@ limx-scratch --dry-run
 运行单元测试：
 
 ```bash
-cd agent-harness
+cd limx-cli
 python3 -m pytest tests/ -q
 ```
 
@@ -273,10 +273,10 @@ limx-cli --dry-run motion walk --x 0.05 --duration 1
 
 ## 8. 开源说明
 
-LimX Agent Harness 旨在提供一个更易用、更可组合的机器人技能入口：AI Agent 可以调用，开发者可以脚本化，普通用户可以拖积木。
+LimX CLI 旨在提供一个更易用、更可组合的机器人技能入口：AI Agent 可以调用，开发者可以脚本化，普通用户可以拖积木。
 
 许可证说明：
 
-- 除第三方组件外，LimX Agent Harness 自研部分采用 Apache License 2.0。
+- 除第三方组件外，LimX CLI 自研部分采用 Apache License 2.0。
 - `scratch-app` 基于 Scratch GUI，保留其原始 GPL-3.0 许可证声明和版权信息。
 - 如果发布内容包含 `scratch-app` 或由其构建生成的 Scratch 页面，需要同时遵守 GPL-3.0 的分发要求。

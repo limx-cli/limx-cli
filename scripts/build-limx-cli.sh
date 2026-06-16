@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SCRATCH_SRC="$PROJECT_DIR/scratch-app"
 SCRATCH_OUT="$PROJECT_DIR/scratch-static"
-VENDOR_SCRATCH_APP="$PROJECT_DIR/agent_harness/vendor/scratch-app"
+VENDOR_SCRATCH_APP="$PROJECT_DIR/limx-cli/vendor/scratch-app"
 TARGET_DIR="${LIMX_SCRATCH_TARGET_DIR:-$PROJECT_DIR/target}"
 PID_FILE="$PROJECT_DIR/.scratch-bridge.pid"
 LOG_FILE="$PROJECT_DIR/.scratch-bridge.log"
@@ -68,8 +68,8 @@ Options:
 Examples:
   $0
   $0 --clean --background
-  $0 build --target-dir /tmp/limx-agent-harness-target
-  /tmp/limx-agent-harness-target/limx-scratch
+  $0 build --target-dir /tmp/limx-cli-target
+  /tmp/limx-cli-target/limx-scratch
 EOF
 }
 
@@ -173,10 +173,10 @@ clean_outputs() {
         "$TARGET_DIR" \
         "$NODE_CACHE_DIR" \
         "$PROJECT_DIR/dist" \
-        "$PROJECT_DIR/limx_agent_harness.egg-info" \
+        "$PROJECT_DIR/limx_cli.egg-info" \
         "$PROJECT_DIR/__pycache__" \
         "$PROJECT_DIR/tests/__pycache__" \
-        "$PROJECT_DIR/agent_harness/__pycache__"
+        "$PROJECT_DIR/limx-cli/__pycache__"
     rm -f "$PID_FILE" "$LOG_FILE"
     if [ "$CLEAN_DEPS" -eq 1 ]; then
         echo "Cleaning npm dependencies ..."
@@ -208,7 +208,7 @@ dst_node_modules.mkdir(parents=True, exist_ok=True)
 package = {
     "name": "limx-scratch-runner-runtime",
     "private": True,
-    "description": "Minimal runtime dependencies for agent_harness/scratch_runner.js",
+    "description": "Minimal runtime dependencies for limx-cli/scratch_runner.js",
 }
 (dst / "package.json").write_text(json.dumps(package, indent=2) + "\n")
 
@@ -386,16 +386,16 @@ build_target() {
     rm -rf "$TARGET_DIR"
     mkdir -p "$TARGET_DIR/python"
 
-    wheelhouse="$(mktemp -d /tmp/limx-agent-harness-wheelhouse.XXXXXX)"
+    wheelhouse="$(mktemp -d /tmp/limx-cli-wheelhouse.XXXXXX)"
     cleanup_wheelhouse() {
         rm -rf "$wheelhouse"
     }
     trap cleanup_wheelhouse EXIT
 
     cd "$PROJECT_DIR"
-    rm -rf "$PROJECT_DIR/build" "$PROJECT_DIR/dist" "$PROJECT_DIR/limx_agent_harness.egg-info"
+    rm -rf "$PROJECT_DIR/build" "$PROJECT_DIR/dist" "$PROJECT_DIR/limx_cli.egg-info"
     "$PYTHON_BIN" setup.py bdist_wheel -d "$wheelhouse" >/dev/null
-    wheel="$(ls "$wheelhouse"/limx_agent_harness-*.whl | head -n 1)"
+    wheel="$(ls "$wheelhouse"/limx_cli-*.whl | head -n 1)"
     "$PYTHON_BIN" -m pip install --upgrade --target "$TARGET_DIR/python" "$wheel"
 
     cp -r "$SCRATCH_OUT" "$TARGET_DIR/scratch-static"
@@ -408,10 +408,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -d "$SCRIPT_DIR/python" ]; then
     DIR="$SCRIPT_DIR"
-elif [ -d "$SCRIPT_DIR/agent-harness/python" ]; then
-    DIR="$SCRIPT_DIR/agent-harness"
+elif [ -d "$SCRIPT_DIR/limx-cli/python" ]; then
+    DIR="$SCRIPT_DIR/limx-cli"
 else
-    echo "ERROR: Cannot locate agent-harness runtime bundle near $SCRIPT_DIR" >&2
+    echo "ERROR: Cannot locate limx-cli runtime bundle near $SCRIPT_DIR" >&2
     exit 1
 fi
 PYTHON_BIN="${LIMX_SCRATCH_PYTHON:-python3}"
@@ -423,7 +423,7 @@ if [ -x "$BUNDLED_NODE" ]; then
     export PATH="$DIR/node/bin:$PATH"
 fi
 
-exec "$PYTHON_BIN" -m agent_harness.scratch_bridge \
+exec "$PYTHON_BIN" -m limx-cli.scratch_bridge \
     --static-dir "$DIR/scratch-static" \
     "$@"
 SH
@@ -436,10 +436,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -d "$SCRIPT_DIR/python" ]; then
     DIR="$SCRIPT_DIR"
-elif [ -d "$SCRIPT_DIR/agent-harness/python" ]; then
-    DIR="$SCRIPT_DIR/agent-harness"
+elif [ -d "$SCRIPT_DIR/limx-cli/python" ]; then
+    DIR="$SCRIPT_DIR/limx-cli"
 else
-    echo "ERROR: Cannot locate agent-harness runtime bundle near $SCRIPT_DIR" >&2
+    echo "ERROR: Cannot locate limx-cli runtime bundle near $SCRIPT_DIR" >&2
     exit 1
 fi
 PYTHON_BIN="${LIMX_SCRATCH_PYTHON:-python3}"
@@ -451,12 +451,12 @@ if [ -x "$BUNDLED_NODE" ]; then
     export PATH="$DIR/node/bin:$PATH"
 fi
 
-exec "$PYTHON_BIN" -m agent_harness.cli "$@"
+exec "$PYTHON_BIN" -m limx-cli.cli "$@"
 SH
     chmod +x "$TARGET_DIR/limx-cli"
 
     cat > "$TARGET_DIR/README.txt" <<EOF
-LimX Agent Harness copyable target
+LimX CLI copyable target
 
 Requirements on target machine:
 - python3
@@ -535,7 +535,7 @@ for pid in os.listdir("/proc"):
         continue
     parts = [p.decode("utf-8", "ignore") for p in raw.split(b"\0") if p]
     text = " ".join(parts)
-    if "agent_harness.scratch_bridge" not in text and "limx-scratch" not in text and "scratch_bridge" not in text:
+    if "limx-cli.scratch_bridge" not in text and "limx-scratch" not in text and "scratch_bridge" not in text:
         continue
     if "--listen-port" in parts:
         idx = parts.index("--listen-port")
@@ -564,7 +564,7 @@ run_bridge() {
     stop_existing_bridge
 
     args=(
-        -m agent_harness.scratch_bridge
+        -m limx-cli.scratch_bridge
         --listen-host "$LISTEN_HOST"
         --listen-port "$LISTEN_PORT"
         --robot-host "$ROBOT_HOST"

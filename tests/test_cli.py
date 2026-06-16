@@ -1,21 +1,21 @@
 import io
+import importlib
 import json
 import unittest
 from contextlib import redirect_stdout
 from unittest import mock
 
-from agent_harness.cli import (
-    action_library_is_running,
-    build_parser,
-    command_count,
-    main,
-    maybe_lock,
-    request_once,
-    seated_state_is_ready,
-    sit_result_is_success,
-    standing_state_is_ready,
-    walk_mode_is_ready,
-)
+cli = importlib.import_module("limx-cli.cli")
+action_library_is_running = cli.action_library_is_running
+build_parser = cli.build_parser
+command_count = cli.command_count
+main = cli.main
+maybe_lock = cli.maybe_lock
+request_once = cli.request_once
+seated_state_is_ready = cli.seated_state_is_ready
+sit_result_is_success = cli.sit_result_is_success
+standing_state_is_ready = cli.standing_state_is_ready
+walk_mode_is_ready = cli.walk_mode_is_ready
 
 
 class CliTest(unittest.TestCase):
@@ -216,7 +216,7 @@ class CliTest(unittest.TestCase):
         client = FakeClient()
         args = build_parser().parse_args(["--lock", "raw", "request_audio_play_file", "--data", "{}"])
 
-        with mock.patch("agent_harness.cli.make_client", return_value=client):
+        with mock.patch.object(cli, "make_client", return_value=client):
             stdout = io.StringIO()
             with redirect_stdout(stdout):
                 request_once(args, "request_audio_play_file", {}, True)
@@ -249,7 +249,7 @@ class CliTest(unittest.TestCase):
         client = FakeClient()
         args = build_parser().parse_args(["--lock", "raw", "request_audio_play_file", "--data", "{}"])
 
-        with mock.patch("agent_harness.cli.make_client", return_value=client):
+        with mock.patch.object(cli, "make_client", return_value=client):
             with self.assertRaises(RuntimeError):
                 request_once(args, "request_audio_play_file", {}, True)
 

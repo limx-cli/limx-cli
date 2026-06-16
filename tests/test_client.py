@@ -1,7 +1,10 @@
+import importlib
 import json
 import unittest
 
-from agent_harness.client import RobotLockIdentity, SignalingClient
+client_module = importlib.import_module("limx-cli.client")
+RobotLockIdentity = client_module.RobotLockIdentity
+SignalingClient = client_module.SignalingClient
 
 
 class FakeWebSocketApp:

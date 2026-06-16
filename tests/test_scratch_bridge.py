@@ -1,4 +1,5 @@
 import io
+import importlib
 import json
 from pathlib import Path
 import tempfile
@@ -6,24 +7,23 @@ import unittest
 import zipfile
 from unittest import mock
 
-from agent_harness.scratch_bridge import (
-    SCRATCH_EXTENSION_JS,
-    BridgeConfig,
-    ProjectRunner,
-    build_cli_args,
-    extract_action_menu,
-    extract_dance_menu,
-    extract_emoji_menu,
-    normalize_work_mode,
-    parse_cli_json,
-    render_extension_js,
-    robot_name_from_accid,
-    robot_project_dir,
-    robot_project_name,
-    robot_supports_emoji_blocks,
-    robot_supports_posture_blocks,
-    sanitize_scratch_project,
-)
+scratch_bridge = importlib.import_module("limx-cli.scratch_bridge")
+SCRATCH_EXTENSION_JS = scratch_bridge.SCRATCH_EXTENSION_JS
+BridgeConfig = scratch_bridge.BridgeConfig
+ProjectRunner = scratch_bridge.ProjectRunner
+build_cli_args = scratch_bridge.build_cli_args
+extract_action_menu = scratch_bridge.extract_action_menu
+extract_dance_menu = scratch_bridge.extract_dance_menu
+extract_emoji_menu = scratch_bridge.extract_emoji_menu
+normalize_work_mode = scratch_bridge.normalize_work_mode
+parse_cli_json = scratch_bridge.parse_cli_json
+render_extension_js = scratch_bridge.render_extension_js
+robot_name_from_accid = scratch_bridge.robot_name_from_accid
+robot_project_dir = scratch_bridge.robot_project_dir
+robot_project_name = scratch_bridge.robot_project_name
+robot_supports_emoji_blocks = scratch_bridge.robot_supports_emoji_blocks
+robot_supports_posture_blocks = scratch_bridge.robot_supports_posture_blocks
+sanitize_scratch_project = scratch_bridge.sanitize_scratch_project
 
 
 class ScratchBridgeTest(unittest.TestCase):
@@ -54,7 +54,7 @@ class ScratchBridgeTest(unittest.TestCase):
         )
 
     def test_dance_run_cli_accepts_underscore_rc_mapping(self):
-        from agent_harness.cli import build_parser
+        build_parser = importlib.import_module("limx-cli.cli").build_parser
 
         args = build_parser().parse_args([
             "--host",
@@ -258,7 +258,7 @@ class ScratchBridgeTest(unittest.TestCase):
         fake_process.poll.return_value = None
         fake_process.stdout = []
         fake_process.stderr = []
-        with mock.patch("agent_harness.scratch_bridge.subprocess.Popen", return_value=fake_process) as popen:
+        with mock.patch.object(scratch_bridge.subprocess, "Popen", return_value=fake_process) as popen:
             result = runner.start("/tmp/project.sb3")
 
         self.assertEqual("success", result["result"])
@@ -303,7 +303,7 @@ class ScratchBridgeTest(unittest.TestCase):
             self.assertTrue(Path(project_dir).is_dir())
 
     def test_project_runner_starts_one_main_program_stack(self):
-        runner = Path(__file__).resolve().parents[1] / "agent_harness" / "scratch_runner.js"
+        runner = Path(__file__).resolve().parents[1] / "limx-cli" / "scratch_runner.js"
         source = runner.read_text(encoding="utf-8")
 
         self.assertNotIn("vm.greenFlag();", source)
@@ -314,8 +314,8 @@ class ScratchBridgeTest(unittest.TestCase):
 
     def test_project_start_and_stop_exit_action_or_dance_modes(self):
         root = Path(__file__).resolve().parents[1]
-        bridge = (root / "agent_harness" / "scratch_bridge.py").read_text(encoding="utf-8")
-        cli = (root / "agent_harness" / "cli.py").read_text(encoding="utf-8")
+        bridge = (root / "limx-cli" / "scratch_bridge.py").read_text(encoding="utf-8")
+        cli = (root / "limx-cli" / "cli.py").read_text(encoding="utf-8")
 
         self.assertIn('commands.add_parser("stop", help="Interrupt current action', cli)
         self.assertIn('commands.add_parser("stop", help="Interrupt current dance', cli)

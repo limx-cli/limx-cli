@@ -1520,7 +1520,7 @@ def run_bridge_command(command: str, args: Dict[str, Any], config: BridgeConfig)
     cli_args = build_cli_args(command, args, config)
     with config.command_lock:
         process = subprocess.Popen(
-            [config.python, "-m", "agent_harness.cli", *cli_args],
+            [config.python, "-m", "limx-cli.cli", *cli_args],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

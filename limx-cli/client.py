@@ -20,7 +20,7 @@ class SignalingTimeout(SignalingError):
 class RobotLockIdentity:
     user_name: str = "agent"
     user_id: str = "agent"
-    device_id: str = "limx-agent-harness"
+    device_id: str = "limx-cli"
 
     def as_request_data(self) -> Dict[str, str]:
         return {

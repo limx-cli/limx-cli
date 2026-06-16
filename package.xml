@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>agent_harness</name>
+  <name>limx_cli</name>
   <version>0.1.0</version>
-  <description>Copyable LimX Scratch agent harness deployment bundle.</description>
+  <description>Copyable LimX Scratch and CLI deployment bundle.</description>
   <maintainer email="support@limx.com">LimX</maintainer>
   <license>Proprietary</license>
 
