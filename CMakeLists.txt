@@ -76,11 +76,17 @@ add_custom_command(
 add_custom_target(${PROJECT_NAME}_bundle ALL DEPENDS "${LIMX_CLI_STAMP}")
 
 install(
-  DIRECTORY "${LIMX_CLI_BUNDLE_DIR}"
-  DESTINATION bin
+  DIRECTORY
+    "${LIMX_CLI_BUNDLE_DIR}/python"
+    "${LIMX_CLI_BUNDLE_DIR}/scratch-static"
+    "${LIMX_CLI_BUNDLE_DIR}/node"
+  DESTINATION bin/limx-cli.bin
   USE_SOURCE_PERMISSIONS
-  PATTERN "limx-cli" EXCLUDE
-  PATTERN "limx-scratch" EXCLUDE
+)
+
+install(
+  FILES "${LIMX_CLI_BUNDLE_DIR}/README.txt"
+  DESTINATION bin/limx-cli.bin
 )
 
 install(

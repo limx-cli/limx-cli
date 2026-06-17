@@ -7,6 +7,10 @@ LimX CLI is a skill control and orchestration layer built on top of the LimX rob
 - `limx-cli`: a command-line tool for AI Agents, automation scripts, and developers.
 - `limx-scratch`: a local service for Scratch visual programming, with the built-in `LimX Robot` block extension.
 
+It is intended for robot skill inspection, demos, education, automation, and safe agent-assisted operation. It is not a replacement for the robot control stack, firmware, safety controller, or the signaling service itself. It does not provide cloud account management, fleet management, long-running production orchestration, or authorization policy enforcement beyond the robot control lock APIs exposed by signaling.
+
+Current status: `0.1.0` initial open-source release candidate. The CLI and Scratch bridge are usable for local development and robot smoke tests. Hardware coverage is currently focused on Oli-style workflows; other robot families and production deployment patterns may need additional validation.
+
 ![LimX CLI Software Architecture](docs/limx-cli-architecture.svg)
 
 ## 1. Features
@@ -16,7 +20,14 @@ LimX CLI is a skill control and orchestration layer built on top of the LimX rob
 - **Automation friendly**: the CLI outputs JSON by default and supports dry-run, making it suitable for scripts, AI Agents, and test flows.
 - **Easy to deploy**: CMake builds an installable bundle, with `limx-cli` and `limx-scratch` available directly after installation.
 
-## 2. Architecture Overview
+## 2. Intended Audience
+
+- Robot application developers who need a scriptable interface to the LimX signaling WebSocket API.
+- AI Agent tool builders who need a JSON-first, dry-run-friendly robot skill entry point.
+- Educators, demo engineers, and operators who want Scratch-style visual programming for robot behaviors.
+- Contributors who want to improve the CLI, Scratch bridge, docs, packaging, or tests.
+
+## 3. Architecture Overview
 
 Typical flow:
 
@@ -25,7 +36,7 @@ Typical flow:
 3. `limx-cli` converts high-level skill commands into WebSocket API `request_*` messages.
 4. The WebSocket API forwards the requests to the robot control system.
 
-## 3. Prerequisites
+## 4. Prerequisites
 
 - Linux x86_64 or aarch64.
 - Python `>= 3.8`.
@@ -65,7 +76,30 @@ For development tests:
 python3 -m pip install pytest
 ```
 
-## 4. Build And Install With CMake
+## 5. Quick Start
+
+```bash
+cd limx-cli
+python3 -m pip install websocket-client pytest
+python3 -m pytest tests/ -q
+
+# Run without installing, useful during development.
+python3 -m limx-cli.cli --dry-run state mode
+
+# Build and install the copyable runtime bundle.
+cmake -S . -B build
+cmake --build build
+cmake --install build --prefix install
+export PATH="$PWD/install/bin:$PATH"
+
+limx-cli --help
+limx-cli --host 10.192.1.2 --port 5000 state mode
+limx-scratch --listen-host 0.0.0.0 --listen-port 6080
+```
+
+Use `--dry-run` before high-risk motion, action, dance, audio, or display changes.
+
+## 6. Build And Install With CMake
 
 Build with CMake:
 
@@ -85,7 +119,7 @@ After installation:
 
 - `limx-cli` is installed to `install/bin/limx-cli`.
 - `limx-scratch` is installed to `install/bin/limx-scratch`.
-- Other runtime resources are installed to `install/bin/limx-cli/`.
+- Runtime resources are installed under `install/bin/limx-cli.bin/`.
 
 Use the local installation directory:
 
@@ -106,9 +140,9 @@ After system installation:
 
 - `limx-cli` is installed to `/usr/local/bin/limx-cli`.
 - `limx-scratch` is installed to `/usr/local/bin/limx-scratch`.
-- Other runtime resources are installed to `/usr/local/bin/limx-cli/`.
+- Runtime resources are installed under `/usr/local/bin/limx-cli.bin/`.
 
-## 5. Quick Start
+## 7. Usage
 
 ### 5.1 Configure Robot Connection
 
@@ -235,7 +269,7 @@ Classroom and demo modes can use dry-run:
 limx-scratch --dry-run
 ```
 
-## 6. Environment Variables
+## 8. Environment Variables
 
 | Environment Variable | Default | Description |
 | --- | --- | --- |
@@ -246,7 +280,7 @@ limx-scratch --dry-run
 | `LIMX_SCRATCH_MENU_TIMEOUT` | `5` | Action/dance menu preload timeout |
 | `LIMX_SCRATCH_PYTHON` | `python3` | Python executable |
 
-## 7. Tests
+## 9. Tests
 
 Run unit tests:
 
@@ -271,7 +305,7 @@ limx-cli dance list
 limx-cli --dry-run motion walk --x 0.05 --duration 1
 ```
 
-## 8. Open Source Notes
+## 10. Open Source Notes
 
 LimX CLI provides an easier and more composable entry point for robot skills: AI Agents can call it, developers can script it, and users can build behaviors with blocks.
 

@@ -408,8 +408,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -d "$SCRIPT_DIR/python" ]; then
     DIR="$SCRIPT_DIR"
-elif [ -d "$SCRIPT_DIR/limx-cli/python" ]; then
-    DIR="$SCRIPT_DIR/limx-cli"
+elif [ -d "$SCRIPT_DIR/limx-cli.bin/python" ]; then
+    DIR="$SCRIPT_DIR/limx-cli.bin"
 else
     echo "ERROR: Cannot locate limx-cli runtime bundle near $SCRIPT_DIR" >&2
     exit 1
@@ -436,8 +436,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -d "$SCRIPT_DIR/python" ]; then
     DIR="$SCRIPT_DIR"
-elif [ -d "$SCRIPT_DIR/limx-cli/python" ]; then
-    DIR="$SCRIPT_DIR/limx-cli"
+elif [ -d "$SCRIPT_DIR/limx-cli.bin/python" ]; then
+    DIR="$SCRIPT_DIR/limx-cli.bin"
 else
     echo "ERROR: Cannot locate limx-cli runtime bundle near $SCRIPT_DIR" >&2
     exit 1

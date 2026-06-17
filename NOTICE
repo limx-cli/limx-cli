@@ -1,0 +1,33 @@
+﻿LimX CLI
+Copyright LimX
+
+This product includes software developed by LimX and distributed under the Apache License, Version 2.0, except where otherwise noted.
+
+Third-party components and references:
+
+- websocket-client
+  Python WebSocket client library used by the LimX CLI signaling client.
+  Project: https://github.com/websocket-client/websocket-client
+  License: Apache License 2.0
+
+- Scratch GUI
+  The scratch-app directory is based on Scratch GUI.
+  Project: https://github.com/LLK/scratch-gui
+  Original author: Massachusetts Institute of Technology
+  License: GNU General Public License v3.0
+  Trademark note: Scratch names, logos, character graphics, and related marks are trademarks of MIT and are not licensed for endorsement or promotion without permission.
+
+- TurboWarp / Scratch ecosystem packages
+  The Scratch bridge and runtime build use packages from the Scratch and TurboWarp ecosystem, including scratch-vm, scratch-blocks, scratch-render, scratch-audio, scratch-paint, scratch-l10n, scratch-storage, scratch-svg-renderer, and related packages listed in scratch-app/package.json and package-lock.json.
+  Each dependency remains under its upstream license.
+
+- Node.js runtime
+  CMake bundle builds may include a Node.js binary runtime downloaded from the official Node.js distribution site.
+  Project: https://nodejs.org/
+  License: see the upstream Node.js distribution license.
+
+- Documentation images
+  docs/limx-cli-architecture.svg is a project-authored architecture diagram.
+  docs/oli-robot-programming.gif is a project demo asset for LimX CLI Scratch visual programming.
+
+No third-party model weights or training datasets are included in this repository unless explicitly added and documented in a later release.
