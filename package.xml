@@ -5,7 +5,7 @@
   <version>0.1.0</version>
   <description>Copyable LimX Scratch and CLI deployment bundle.</description>
   <maintainer email="support@limx.com">LimX</maintainer>
-  <license>Proprietary</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>cmake</buildtool_depend>
 
