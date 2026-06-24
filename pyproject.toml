@@ -7,9 +7,7 @@ name = "limx-cli"
 version = "0.1.0"
 description = "Agent-native CLI harness for the LimX robot signaling WebSocket skills"
 requires-python = ">=3.8"
-dependencies = [
-  "websocket-client>=1.6",
-]
+dynamic = ["dependencies"]
 
 [project.scripts]
 limx-cli = "limx_cli_entrypoints:cli_main"

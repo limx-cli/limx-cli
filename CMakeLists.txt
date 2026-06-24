@@ -55,6 +55,18 @@ if(_limx_cli_effective_node_arch STREQUAL "")
 endif()
 message(STATUS "LimX CLI bundled Node.js architecture: ${_limx_cli_effective_node_arch}")
 
+# Re-run bundle build when sources or package metadata change.
+file(GLOB_RECURSE LIMX_CLI_PY_SOURCES CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/limx-cli/*.py"
+)
+set(LIMX_CLI_BUILD_DEPS
+  "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-limx-cli.sh"
+  "${CMAKE_CURRENT_SOURCE_DIR}/setup.py"
+  "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MANIFEST.in"
+  ${LIMX_CLI_PY_SOURCES}
+)
+
 add_custom_command(
   OUTPUT "${LIMX_CLI_STAMP}"
   COMMAND
@@ -69,6 +81,7 @@ add_custom_command(
         "--node-arch" "${_limx_cli_effective_node_arch}"
   COMMAND "${CMAKE_COMMAND}" -E touch "${LIMX_CLI_STAMP}"
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  DEPENDS ${LIMX_CLI_BUILD_DEPS}
   COMMENT "Building ${LIMX_CLI_BUNDLE_NAME} deployment bundle"
   VERBATIM
 )

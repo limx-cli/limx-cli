@@ -2,6 +2,13 @@
 
 All notable changes to LimX CLI are documented here.
 
+## Unreleased
+
+### Fixed
+
+- Ensure `websocket-client` is included in copyable deployment bundles by exposing it through legacy `setup.py` metadata and failing target builds if the bundled Python runtime is missing the `websocket` package.
+- Rebuild the CMake deployment bundle when Python package metadata or CLI Python sources change, preventing stale bundles after dependency updates.
+
 ## [0.1.0] - 2026-06-17
 
 ### Added

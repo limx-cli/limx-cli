@@ -1,6 +1,9 @@
 from setuptools import find_packages, setup
 
 
+INSTALL_REQUIRES = ["websocket-client>=1.6"]
+
+
 setup(
     name="limx-cli",
     version="0.1.0",
@@ -9,6 +12,7 @@ setup(
     py_modules=["limx_cli_entrypoints"],
     include_package_data=True,
     package_data={"limx-cli": ["*.js", "vendor/**/*"]},
+    install_requires=INSTALL_REQUIRES,
     entry_points={
         "console_scripts": [
             "limx-cli=limx_cli_entrypoints:cli_main",

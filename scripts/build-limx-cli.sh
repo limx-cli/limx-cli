@@ -397,6 +397,10 @@ build_target() {
     "$PYTHON_BIN" setup.py bdist_wheel -d "$wheelhouse" >/dev/null
     wheel="$(ls "$wheelhouse"/limx_cli-*.whl | head -n 1)"
     "$PYTHON_BIN" -m pip install --upgrade --target "$TARGET_DIR/python" "$wheel"
+    if [ ! -f "$TARGET_DIR/python/websocket/__init__.py" ]; then
+        echo "ERROR: Python dependency websocket-client was not bundled under $TARGET_DIR/python" >&2
+        exit 1
+    fi
 
     cp -r "$SCRATCH_OUT" "$TARGET_DIR/scratch-static"
     bundle_node_runtime
